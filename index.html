@@ -1,40 +1,2218 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<title>株シミュレーター LIFE｜B! ID テスト環境</title>
-<style>
-:root{color-scheme:light;--bg:#f3f6fb;--card:#fff;--ink:#1d2b40;--muted:#65758b;--blue:#2368d8;--line:#dce4ef}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;line-height:1.75}
-header{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 max(20px,calc((100% - 920px)/2));font-weight:800}
-main{max-width:920px;margin:42px auto;padding:0 20px}.eyebrow{color:var(--blue);font-size:.78rem;font-weight:800;letter-spacing:.12em}
-h1{font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.35;margin:8px 0 12px}.lead{color:var(--muted);max-width:680px}
-.card{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 28px #1d2b400d}
-.status{display:flex;align-items:center;gap:10px;font-weight:800}.dot{width:10px;height:10px;border-radius:50%;background:#e2a32b}
-ul{padding-left:1.3rem;color:var(--muted)}li{margin:6px 0}
-.note{font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin-top:18px}
-footer{text-align:center;color:var(--muted);font-size:.8rem;padding:30px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[α版]株シミュレーターLIFEオンライン</title>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.0/dist/chartjs-chart-financial.min.js"></script>
+    <style>
+        :root { --bg-dark:#0b0e14; --bg-card:#151922; --bg-hover:#1e2330; --text-main:#f0f4f8; --text-sub:#8a99ad; --accent-green:#00c853; --accent-red:#ff3d00; --accent-gold:#ffd700; --primary-blue:#2962ff; --border-color:#232a3b; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 70px; }
+        header { background-color: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 1.2rem; font-weight: bold; color: var(--primary-blue); display: flex; align-items: center; gap: 8px; }
+        .market-status-bar { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--text-sub); }
+        .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+        .status-open { background-color: rgba(0, 200, 83, 0.2); color: var(--accent-green); }
+        .status-night { background-color: rgba(41, 98, 255, 0.2); color: #64b5f6; }
+        .status-closed { background-color: rgba(255, 61, 0, 0.2); color: var(--accent-red); }
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--bg-card); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .nav-btn { background: none; border: none; color: var(--text-sub); display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; cursor: pointer; width: auto; flex: 1 1 0; min-width: 0; transition: color 0.2s; }
+        .nav-btn.active { color: var(--primary-blue); font-weight: bold; }
+        .nav-btn span { font-size: 1.2rem; margin-bottom: 2px; }
+        .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 20px 15px; flex: 1; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background-color: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .stock-card { background-color: var(--bg-card); border-radius: 10px; padding: 15px; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s, background-color 0.2s; }
+        .stock-card:hover { transform: translateY(-3px); background-color: var(--bg-hover); }
+        .stock-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .stock-name { font-weight: bold; font-size: 1rem; }
+        .stock-code { font-size: 0.8rem; color: var(--text-sub); }
+        .stock-price-box { text-align: right; }
+        .stock-price { font-size: 1.2rem; font-weight: bold; }
+        .stock-change { font-size: 0.85rem; font-weight: bold; }
+        .up { color: var(--accent-green); }
+        .down { color: var(--accent-red); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: var(--bg-card); padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; border: 1px solid var(--border-color); }
+        .btn { background-color: var(--primary-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-sell { background-color: var(--accent-red); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-sub); font-weight: normal; }
+        input[type="number"], input[type="text"] { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border-color); color: white; border-radius: 6px; margin-top: 5px; margin-bottom: 15px; }
+        .tab-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn { background: var(--bg-hover); border: none; color: var(--text-sub); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
+        .tab-btn.active { background: var(--primary-blue); color: white; }
+        .portfolio-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .asset-card { background-color: var(--bg-card); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; }
+        .asset-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 5px; }
+        .asset-val { font-size: 1.4rem; font-weight: bold; }
+        .news-item { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .news-item:last-child { border-bottom: none; }
+        .news-date { font-size: 0.75rem; color: var(--text-sub); }
+        .news-title { font-size: 0.95rem; margin-top: 4px; font-weight: bold; }
+        .notice-box { background-color: rgba(255, 215, 0, 0.1); border: 1px solid var(--accent-gold); border-radius: 8px; padding: 12px 15px; font-size: 0.85rem; color: #ffe066; margin-bottom: 20px; line-height: 1.5; }
+        @media (max-width: 768px) { .market-status-bar { font-size: 0.75rem; } .grid { grid-template-columns: 1fr; } .portfolio-summary { grid-template-columns: 1fr 1fr; } }
+
+        /* ===== アクセス情報記録通知 ===== */
+        #accessRecordNotice {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 78px;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            background: rgba(21, 25, 34, 0.97);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.35);
+            backdrop-filter: blur(8px);
+        }
+        .access-record-text {
+            font-size: .82rem;
+            line-height: 1.55;
+        }
+        .access-record-ok {
+            flex: 0 0 auto;
+            border: 0;
+            border-radius: 7px;
+            padding: 9px 18px;
+            background: var(--primary-blue);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .access-record-ok:hover { opacity: .9; }
+        @media (max-width: 768px) {
+            #accessRecordNotice {
+                left: 10px;
+                right: 10px;
+                bottom: 76px;
+                padding: 12px;
+                align-items: flex-end;
+            }
+            .access-record-text { font-size: .75rem; }
+            .access-record-ok { padding: 8px 14px; }
+        }
+
+
+        /* 取引履歴バックアップ / 復旧 */
+        .trade-backup-panel{margin-top:18px;padding:20px;border:1px solid rgba(59,130,246,.28);border-radius:14px;background:rgba(59,130,246,.06)}
+        .trade-backup-id{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);margin:12px 0}
+        .trade-backup-id code{font-family:monospace;font-size:15px;font-weight:700;color:#93c5fd;word-break:break-all}
+        .trade-backup-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+        .trade-backup-btn{border:0;border-radius:10px;padding:12px 14px;font-weight:700;cursor:pointer;color:#fff;background:#2563eb}
+        .trade-backup-btn.secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+        .trade-backup-btn:hover{transform:translateY(-1px);opacity:.92}
+        .trade-backup-note{margin-top:10px;color:var(--text-sub);font-size:.78rem;line-height:1.6}
+        @media(max-width:600px){.trade-backup-actions{grid-template-columns:1fr}.trade-backup-id{align-items:flex-start;flex-direction:column}}
+
+        /* 初回 識別子案内 */
+        #identifierWelcome{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);padding:18px;}
+        .identifier-welcome-card{width:min(520px,100%);background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:28px;box-shadow:0 18px 60px rgba(0,0,0,.5);}
+        .identifier-welcome-title{font-size:1.35rem;font-weight:800;margin-bottom:8px;}
+        .identifier-welcome-sub{color:var(--text-sub);font-size:.9rem;line-height:1.7;}
+        .identifier-big{margin:18px 0;padding:18px;border-radius:12px;background:var(--bg-dark);border:1px solid rgba(59,130,246,.45);text-align:center;}
+        .identifier-big code{font-family:monospace;font-size:1.35rem;font-weight:800;letter-spacing:1px;color:#93c5fd;word-break:break-all;}
+        .identifier-welcome-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .identifier-welcome-actions button{border:0;border-radius:10px;padding:12px;font-weight:800;cursor:pointer;}
+        .identifier-copy{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.12)!important;}
+        .identifier-save{background:#2563eb;color:#fff;}
+        .identifier-start{width:100%;margin-top:12px;background:#00a86b;color:#fff;}
+        .identifier-save-status{font-size:.8rem;color:var(--text-sub);text-align:center;margin-top:10px;min-height:20px;}
+        @media(max-width:600px){.identifier-welcome-card{padding:22px}.identifier-big code{font-size:1.05rem}.identifier-welcome-actions{grid-template-columns:1fr}}
+
+        /* オンライン利用者登録 */
+        #playerRegistration{position:fixed;inset:0;z-index:9000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:18px;background:rgba(20,42,70,.62);backdrop-filter:blur(5px)}
+        .player-register-card{width:min(480px,100%);max-height:calc(100vh - 36px);overflow-y:auto;margin:auto;padding:28px;border:1px solid #dce6f2;border-radius:18px;background:#fff;color:#20334d;box-shadow:0 22px 70px rgba(20,50,90,.25)}
+        .player-register-card h2{font-size:1.4rem;color:#174d8d;margin-bottom:8px}
+        .player-register-card p{font-size:.88rem;color:#6d7e93;line-height:1.65;margin-bottom:16px}
+        .player-register-card label{display:block;font-size:.84rem;font-weight:700;margin:12px 0 5px}
+        .player-register-card input{width:100%;padding:12px;border:1px solid #d2deed;border-radius:9px;font-size:1rem}
+        .player-register-card button{width:100%;border:0;border-radius:9px;padding:13px;background:#1976e8;color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:14px}
+        .player-register-card button:disabled{opacity:.55;cursor:wait}
+        .life-legal-check-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}
+        .player-register-card .life-legal-check-links button{margin:0;padding:10px 8px;background:#eef5ff;color:#17569b;border:1px solid #c9dcf5;font-size:.82rem}
+        @media(max-width:420px){.life-legal-check-links{grid-template-columns:1fr}}
+        .life-age-confirm{display:flex!important;align-items:flex-start;gap:9px;margin:16px 0 6px!important;font-size:.82rem!important;line-height:1.55}
+        .life-age-confirm input{width:18px;height:18px;flex:0 0 18px;margin:1px 0 0;accent-color:#1976e8}
+        .player-register-card .life-age-note{font-size:.76rem;color:#a33b32;margin:4px 0 10px}
+        .life-age-category{border:1px solid #dce6f2;border-radius:12px;padding:13px 15px;margin:14px 0;background:#f8fbff}
+        .life-age-category legend{font-size:.88rem;font-weight:800;color:#174d8d;padding:0 5px}
+        .life-age-category label{display:flex;align-items:flex-start;gap:9px;margin:10px 0;font-size:.88rem;line-height:1.6;cursor:pointer}
+        .life-age-category input{width:18px;height:18px;flex:0 0 18px;margin:2px 0 0;accent-color:#1976e8}
+        #onlineStatus{font-size:.8rem;color:#6d7e93;margin-top:9px;min-height:20px}
+
+        /* 法定代理人同意 専用画面 */
+        #lifeGuardianScreen{position:fixed;inset:0;z-index:12000;display:none;overflow-y:auto;overscroll-behavior:contain;background:#f3f7fc;padding:clamp(12px,3vw,32px)}
+        .life-guardian-screen-card{width:min(760px,100%);min-height:min(680px,calc(100vh - 24px));margin:0 auto;background:#fff;color:#20334d;border:1px solid #dce6f2;border-radius:20px;padding:clamp(20px,4vw,38px);box-shadow:0 18px 55px rgba(20,50,90,.16);display:flex;flex-direction:column}
+        .life-guardian-screen-kicker{font-size:.72rem;letter-spacing:.16em;font-weight:900;color:#1976e8;margin-bottom:10px}
+        .life-guardian-screen-card h2{font-size:clamp(1.35rem,4vw,1.9rem);line-height:1.35;color:#174d8d;margin-bottom:12px}
+        .life-guardian-screen-lead{font-size:.96rem;line-height:1.8;color:#52657d;margin-bottom:22px}
+        .life-guardian-screen-section{padding:20px;border:1px solid #dce8f6;border-radius:14px;background:#f6f9fe}
+        .life-guardian-screen-section h3{font-size:1.05rem;margin-bottom:8px;color:#174d8d}
+        .life-guardian-screen-section p,.life-guardian-screen-section li{font-size:.9rem;line-height:1.8;color:#43566e}
+        .life-guardian-screen-section ul{padding-left:1.3em;margin-top:8px}
+        .life-guardian-screen-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+        .life-guardian-screen-links button{border:1px solid #c9dcf5;border-radius:9px;background:#eaf3ff;color:#17569b;padding:12px;font-weight:800;cursor:pointer}
+        .life-guardian-screen-check{display:flex;align-items:flex-start;gap:12px;margin:22px 0 8px;padding:16px;border:1px solid #c9dcf5;border-radius:12px;background:#f8fbff;font-size:.9rem;font-weight:700;line-height:1.75}
+        .life-guardian-screen-check input{width:21px;height:21px;flex:0 0 21px;margin:2px 0 0;accent-color:#1976e8}
+        .life-guardian-screen-note{font-size:.78rem;line-height:1.7;color:#9a5148;margin-bottom:16px}
+        .life-guardian-screen-actions{display:grid;grid-template-columns:minmax(100px,.7fr) 1.5fr;gap:10px;margin-top:auto;padding-top:10px}
+        .life-guardian-screen-actions button{border:0;border-radius:10px;padding:14px 12px;font-weight:800;font-size:.9rem;cursor:pointer}
+        .life-guardian-back{background:#edf1f6;color:#42536a}
+        .life-guardian-accept{background:#1976e8;color:#fff}
+        .life-guardian-accept:disabled{opacity:.42;cursor:not-allowed}
+        .life-guardian-entry{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:13px;border:1px solid #c9dcf5;border-radius:10px;background:#f6f9fe;margin:14px 0}
+        .life-guardian-entry-text{display:flex;flex-direction:column;gap:4px;font-size:.82rem;line-height:1.55;color:#52657d}
+        .life-guardian-entry-text strong{color:#174d8d;font-size:.9rem}
+        .player-register-card .life-guardian-entry button{width:auto;margin:0;padding:11px 14px;white-space:normal;background:#1976e8;color:#fff;font-size:.82rem}
+        @media(max-width:520px){.life-guardian-screen-links{grid-template-columns:1fr}.life-guardian-screen-actions{grid-template-columns:1fr}.life-guardian-entry{grid-template-columns:1fr}.player-register-card .life-guardian-entry button{width:100%}.life-guardian-screen-card{min-height:calc(100vh - 24px)}}
+
+        .ranking-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+        .ranking-controls select{padding:9px 12px;border:1px solid #d2deed;border-radius:8px;background:#fff;color:#20334d}
+        .ranking-table-wrap{overflow-x:auto}
+        .ranking-table{width:100%;border-collapse:collapse;min-width:620px}
+        /* ランキング読み込みエラー時は、長文を折り返して横スクロールを発生させない */
+        .ranking-table-wrap.ranking-error{overflow-x:hidden}
+        .ranking-table-wrap.ranking-error .ranking-table{width:100%;min-width:0;table-layout:fixed}
+        .ranking-table-wrap.ranking-error .ranking-error-cell{white-space:normal!important;overflow-wrap:anywhere;word-break:normal;text-align:left!important;line-height:1.8;padding:16px 12px}
+        .ranking-table th,.ranking-table td{padding:11px 9px;border-bottom:1px solid #e6edf6;text-align:right;white-space:nowrap}
+        .ranking-table th:first-child,.ranking-table td:first-child,.ranking-table th:nth-child(2),.ranking-table td:nth-child(2){text-align:left}
+        .ranking-me{background:#eef6ff;font-weight:800}
+
+    </style>
+
+    <style id="simulator-life-theme">
+        :root {
+            color-scheme: light;
+            --bg-dark: #f3f7fc;
+            --bg-card: #ffffff;
+            --bg-hover: #edf5ff;
+            --text-main: #20334d;
+            --text-sub: #6d7e93;
+            --accent-green: #128653;
+            --accent-red: #d94343;
+            --accent-gold: #c78a12;
+            --primary-blue: #1976e8;
+            --border-color: #dce6f2;
+        }
+        html, body { background: #f3f7fc; color: #20334d; }
+        body { background-image: linear-gradient(180deg, #ffffff 0, #f3f7fc 280px); }
+        header { background: rgba(255,255,255,.96); border-bottom: 1px solid #dce6f2; box-shadow: 0 3px 14px rgba(36,75,125,.06); }
+        .logo { color: #174d8d; gap: 10px; }
+        .life-mark { display: inline-grid; place-items: center; width: 35px; height: 35px; border-radius: 10px; color: #fff; font-size: 20px; background: linear-gradient(135deg,#39a4ff,#1767d5); box-shadow: 0 4px 10px rgba(25,118,232,.2); }
+        .life-word { margin-left: 6px; color: #1976e8; font-weight: 900; letter-spacing: .02em; }
+        .market-status-bar { color: #6d7e93; }
+        .status-open { background: #e8f8ef; color: #128653; }
+        .status-night { background: #eaf3ff; color: #1767c4; }
+        .status-closed { background: #fff0ed; color: #c44535; }
+        nav { background: rgba(255,255,255,.98); border-top: 1px solid #dce6f2; box-shadow: 0 -4px 18px rgba(36,75,125,.07); }
+        .nav-btn { color: #718198; }
+        .nav-btn.active { color: #1976e8; }
+        .card, .asset-card, .stock-card, .modal-content { background: #fff; border-color: #dce6f2; box-shadow: 0 5px 18px rgba(36,75,125,.06); color: #20334d; }
+        .stock-card:hover { background: #f3f8ff; }
+        .card-title { border-bottom-color: #e6edf6; }
+        .stock-code, .asset-title, th, .news-date { color: #718198; }
+        .stock-price, .asset-val, .stock-name { color: #20334d; }
+        input[type="number"], input[type="text"], select, textarea { background: #fff; border-color: #d2deed; color: #20334d; }
+        input::placeholder { color: #95a3b5; }
+        .tab-btn { background: #edf4fd; color: #526982; }
+        .tab-btn.active { background: #1976e8; color: #fff; }
+        .notice-box { background: #fff8e6; border-color: #f0d48b; color: #755514; }
+        .modal-overlay { background: rgba(22,42,70,.48); backdrop-filter: blur(3px); }
+        #accessRecordNotice { background: rgba(255,255,255,.98); color: #20334d; border-color: #dce6f2; box-shadow: 0 8px 30px rgba(36,75,125,.18); }
+        .trade-backup-panel { background: #f2f7ff; border-color: #d0e2fb; }
+        .trade-backup-id { background: #eaf2fc; }
+        .trade-backup-id code, .identifier-big code { color: #1767c4; }
+        .trade-backup-btn.secondary, .identifier-copy { background: #edf3fa; border-color: #d5e0ee !important; color: #30455f; }
+        #identifierWelcome { background: rgba(22,42,70,.55); }
+        .identifier-welcome-card { background: #fff; border-color: #dce6f2; box-shadow: 0 18px 60px rgba(36,75,125,.2); color: #20334d; }
+        .identifier-big { background: #f2f7ff; border-color: #c7dcf7; }
+        .identifier-save { background: #1976e8; }
+        .identifier-start { background: #128653; }
+        #page-dashboard .tab-btn[onclick="resetAllData()"] { background: #fff0ef !important; color: #c43d3d !important; }
+        .life-announcement { display:flex; align-items:flex-start; gap:12px; margin:16px auto 0; max-width:1200px; width:calc(100% - 30px); padding:14px 16px; border:1px solid #cfe3fb; border-radius:13px; background:linear-gradient(110deg,#f0f7ff,#fff); color:#315171; box-shadow:0 4px 14px rgba(36,75,125,.04); }
+        .life-announcement-icon { flex:none; display:grid; place-items:center; width:30px; height:30px; border-radius:9px; background:#e0efff; color:#1767c4; font-weight:900; }
+        .life-announcement strong { display:block; color:#174d8d; font-size:.9rem; margin-bottom:2px; }
+        .life-announcement p { font-size:.8rem; line-height:1.6; }
+        .life-announcement-actions { margin-top:9px; }
+        .life-announcement-detail { border:1px solid #b8d5f7; border-radius:8px; padding:7px 12px; background:#fff; color:#1767c4; font-weight:700; cursor:pointer; font-size:.78rem; }
+        .life-announcement-detail:hover { background:#eaf3ff; }
+        .life-detail-modal { position:fixed; inset:0; z-index:6000; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(20,42,70,.58); }
+        .life-detail-dialog { width:min(620px,100%); max-height:85vh; overflow:auto; padding:24px; border:1px solid #dce6f2; border-radius:16px; background:#fff; color:#20334d; box-shadow:0 20px 60px rgba(15,40,75,.24); }
+        .life-detail-dialog h2 { margin:0 0 12px; color:#174d8d; font-size:1.2rem; }
+        .life-detail-dialog p, .life-detail-dialog li { font-size:.9rem; line-height:1.8; }
+        .life-detail-dialog ul { padding-left:1.3rem; }
+        .life-detail-close { display:block; margin:18px 0 0 auto; border:0; border-radius:9px; padding:10px 18px; background:#1976e8; color:#fff; font-weight:700; cursor:pointer; }
+        @media(max-width:600px) { .life-announcement { padding:12px; gap:9px; } .life-announcement p { font-size:.74rem; } .logo { font-size:1rem; } .life-mark { width:31px;height:31px; } }
+        .alpha-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border: 1px solid #888;
+  color: #fff;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: 3px;
+}
+
+.bug-report-link {
+  display: inline-block;
+  margin-left: 10px;
+  color: #aaa;
+  font-size: 12px;
+  text-decoration: underline;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.bug-report-link:hover {
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .logo {
+    flex-wrap: wrap;
+  }
+
+  .bug-report-link {
+    margin-left: 0;
+  }
+}
+    </style>
+
+
+
+    <style id="life-header-black-only">
+        /* 上部ヘッダー（バナー）のみ黒。ページ本文・カード類は既存の明るい配色を維持 */
+        header {
+            background: #000000 !important;
+            background-image: none !important;
+            border-bottom: 1px solid #333333 !important;
+            color: #ffffff !important;
+        }
+        header .logo, header .logo > span, header .life-word,
+        header .market-status-bar, header #market-time {
+            color: #ffffff !important;
+        }
+        header .alpha-badge {
+            background: #171717 !important;
+            color: #ffd27a !important;
+            border-color: #777777 !important;
+        }
+        header .bug-report-link { color: #cccccc !important; }
+        header .life-mark { background: #222222 !important; }
+    </style>
+
+
+    <style id="life-readable-typography">
+        /* 日本語フォントを優先し、文字の輪郭と行間を整える */
+        html, body, body * {
+            font-family: "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        body {
+            line-height: 1.65;
+            letter-spacing: 0.015em;
+        }
+        h1, h2, h3, h4, .card-title, .logo, .stock-name {
+            letter-spacing: 0.025em;
+            line-height: 1.45;
+        }
+        button, input, select, textarea {
+            font: inherit;
+            line-height: 1.5;
+        }
+        button { font-weight: 600; }
+        input, select, textarea { letter-spacing: 0.01em; }
+        .stock-price, .stock-change, .asset-value, .ranking-table,
+        .market-status-bar, .stock-code {
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0;
+        }
+        canvas { font-family: "Noto Sans JP", "Noto Sans CJK JP", sans-serif !important; }
+    </style>
+
+
+
+
+    <style id="life-legal-modal-style">
+
+        .life-legal-modal{display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.82);padding:16px;overflow-y:auto}
+        .life-legal-modal.is-open{display:block}
+        .life-legal-dialog{position:relative;width:min(780px,100%);margin:24px auto;padding:26px 24px 30px;background:#151b26;border:1px solid #303c50;border-radius:14px;color:#e9eef5;line-height:1.85;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+        .life-legal-dialog h2{margin:0 45px 20px 0;color:#67ddbd;font-size:22px}
+        .life-legal-dialog h3{margin:23px 0 7px;color:#8de8d1;font-size:16px}
+        .life-legal-dialog p,.life-legal-dialog li{font-size:14px;color:#d4dce8}
+        .life-legal-dialog ul{padding-left:22px;margin:8px 0}
+        .life-legal-close{position:absolute;right:15px;top:14px;width:36px;height:36px;border:1px solid #3a4659;border-radius:8px;background:#252e3d;color:#fff;font-size:25px;line-height:1;cursor:pointer}
+        @media(max-width:600px){.life-legal-modal{padding:8px}.life-legal-dialog{margin:10px auto;padding:22px 17px 25px}.life-legal-dialog h2{font-size:19px}.life-legal-dialog p,.life-legal-dialog li{font-size:13px}}
+    </style>
+
+<style id="life-settings-style">
+.life-settings-overlay{display:none;position:fixed;inset:0;z-index:110000;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);padding:16px;align-items:center;justify-content:center}
+.life-settings-overlay.is-open{display:flex}
+.life-settings-window{position:relative;width:min(560px,100%);max-height:min(82vh,760px);overflow-y:auto;background:#151922;color:#f0f4f8;border:1px solid #354158;border-radius:18px;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.48)}
+.life-settings-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.life-settings-head h2{font-size:1.3rem}.life-settings-close{background:#252d3d;color:#fff;border:0;border-radius:9px;width:38px;height:38px;font-size:1.35rem;cursor:pointer}
+.life-settings-group{border:1px solid #30394b;border-radius:12px;padding:15px;margin:12px 0;background:#1b202c}
+.life-settings-group h3{font-size:.98rem;margin-bottom:10px;color:#9fc3ff}
+.life-settings-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid #30394b;font-size:.88rem}.life-settings-row:last-child{border-bottom:0}
+.life-settings-value{color:#aebbd0;text-align:right;overflow-wrap:anywhere}.life-settings-action{display:block;width:100%;padding:11px 13px;margin-top:9px;border:1px solid #3c5275;border-radius:9px;background:#202d42;color:#eaf2ff;text-align:left;cursor:pointer;font-size:.9rem}
+.life-settings-action:hover{background:#293b58}.life-settings-danger{border-color:#78434a;background:#352329;color:#ffdce0}.life-settings-note{font-size:.78rem;color:#9eacc1;line-height:1.65;margin-top:9px}
+@media(max-width:600px){.life-settings-overlay{padding:8px}.life-settings-window{padding:18px 15px;max-height:88vh}.life-settings-row{align-items:flex-start}}
 </style>
+
 </head>
 <body>
-<header>BAINARI <span style="color:#9aa8ba;margin-left:8px;font-weight:500">/ TEST ENVIRONMENT</span></header>
-<main>
-<div class="eyebrow">B! ID CONNECTION TEST</div>
-<h1>株シミュレーター LIFE<br>テスト環境</h1>
-<p class="lead">このページは、本番サービスとは切り離したB! ID接続テスト用の準備ページです。</p>
-<section class="card">
-<div class="status"><span class="dot"></span> B! IDの接続準備中</div>
-<p>現在、ログイン基盤の公開先とApps Scriptの接続先がまだ設定されていません。</p>
-<ul>
-<li>本番の株価・取引・ランキングサーバーには接続しません。</li>
-<li>本番のGoogleフォームにもデータを送信しません。</li>
-<li>ログイン設定が完了するまで、メールアドレスや認証コードは入力しないでください。</li>
-</ul>
-<div class="note">このテストページは404を解消するための仮ページです。B! IDの認証動作と、株シミュレーター本体のテスト版は、接続先を安全に分離してから追加します。</div>
-</section>
-</main>
-<footer>株シミュレーター LIFE｜テスト専用</footer>
+<div id="test-environment-banner" style="position:relative;z-index:2000;background:#78350f;color:#fff;padding:9px 14px;text-align:center;font-size:13px;font-weight:700;">
+  テスト環境｜本番ランキング・本番取引サーバー・Googleフォームには接続しません。オンライン機能は接続準備中です。
+</div>
+
+    <header><div class="logo">
+  <span class="life-mark">￥</span>
+  <span>
+    株シミュレーター<span class="life-word">LIFE-Online</span>
+  </span>
+  <span class="alpha-badge" aria-label="α版">α版</span>
+  <a
+    href="https://forms.gle/nzRGMY1887UdWCqi7"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="bug-report-link"
+  >バグ報告はこちら</a>
+</div>
+        <div class="market-status-bar">
+            <span id="market-time">----/--/-- --:--:--</span>
+            <span id="market-status" class="status-badge status-closed">確認中...</span>
+        </div>
+    </header>
+
+
+    <div class="container">
+        <div id="page-dashboard" class="page active">
+            <div class="portfolio-summary">
+                <div class="asset-card"><div class="asset-title">総資産評価額</div><div class="asset-val" id="total-assets">¥1,000,000</div></div>
+                <div class="asset-card"><div class="asset-title">現金残高</div><div class="asset-val" id="cash-balance">¥1,000,000</div></div>
+                <div class="asset-card"><div class="asset-title">評価損益</div><div class="asset-val" id="total-profit">¥0 (0.00%)</div></div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">🎁 クーポン入力</div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="coupon-input" placeholder="クーポンコードを入力" style="margin: 0; flex: 1;">
+                    <button class="btn" onclick="applyCoupon()" style="margin: 0; width: auto; white-space: nowrap;">適用</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span>保有銘柄一覧</span>
+                    <button class="tab-btn" onclick="resetAllData()" style="font-size: 0.75rem; background: #331515; color: #ff8888;">データリセット</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead><tr><th>銘柄</th><th>保有数</th><th>平均取得単価</th><th>現在値</th><th>評価額</th><th>損益</th><th>操作</th></tr></thead>
+                        <tbody id="portfolio-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">最新ニュース</div>
+                <div id="dashboard-news-list"></div>
+            </div>
+        </div>
+
+        <div id="page-market" class="page">
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="filterMarket('all', this)">全銘柄</button>
+                <button class="tab-btn" onclick="filterMarket('gainers', this)">値上がり率</button>
+                <button class="tab-btn" onclick="filterMarket('losers', this)">値下がり率</button>
+            </div>
+            <div class="grid" id="market-grid"></div>
+        </div>
+
+        <div id="page-detail" class="page">
+            <button class="tab-btn" onclick="navigateTo('market')" style="margin-bottom: 15px;">← 市場一覧へ戻る</button>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h2 id="detail-name">企業名</h2>
+                        <span id="detail-code" style="color: var(--text-sub);">0000 | 業種</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div id="detail-price" style="font-size: 1.8rem; font-weight: bold;">¥0</div>
+                        <div id="detail-change" style="font-weight: bold;">+0 (+0.00%)</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px;">
+                    <button class="tab-btn active" id="btn-chart-candlestick" onclick="switchChartType('candlestick')">🕯️ ローソク足</button>
+                    <button class="tab-btn" id="btn-chart-line" onclick="switchChartType('line')">📈 折れ線グラフ</button>
+                </div>
+                <div style="margin-top: 10px; height: 320px; position: relative;">
+                    <canvas id="stockChart"></canvas>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div class="card">
+                    <div class="card-title">株式取引</div>
+                    <div id="market-warning-panel" style="display: none;" class="notice-box">
+                        ⚠️ 現在は取引時間外です。<br>
+                        【取引時間】平日 9:00〜11:30 / 12:30〜15:00 / <b>夜間 18:00〜22:59</b>
+                    </div>
+                    <div style="margin-bottom: 10px; font-size: 0.9rem;">保有数: <span id="trade-holding-count" style="font-weight: bold;">0</span> 株</div>
+                    <label style="font-size: 0.85rem; color: var(--text-sub);">注文株数 (1株単位)</label>
+                    <input type="number" id="trade-quantity" value="100" min="1" step="1" oninput="calculateTradeCost()">
+                    <div style="margin-bottom: 15px; font-size: 0.9rem; text-align: right;">概算合計金額: <span id="trade-total-cost" style="font-weight: bold; font-size: 1.1rem;">¥0</span></div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" id="buy-btn" onclick="executeTrade('buy')">買い注文</button>
+                        <button class="btn btn-sell" id="sell-btn" onclick="executeTrade('sell')">売り注文</button>
+                    </div>
+                    <p style="font-size:.78rem;color:var(--text-sub);margin-top:10px;line-height:1.5;">サーバー負荷防止のため、取引操作は1利用者につき5分間に30回までです。市場データの自動同期は回数に含まれません。</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">企業情報</div>
+                    <p id="detail-desc" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;"></p>
+                    <table style="font-size: 0.85rem;">
+                        <tr><th>時価総額</th><td id="detail-marketcap">-</td></tr>
+                        <tr><th>配当利回り</th><td id="detail-dividend">-</td></tr>
+                        <tr><th>PER(株価収益率)</th><td id="detail-per">-</td></tr>
+                        <tr><th>設立年</th><td id="detail-founded">-</td></tr>
+                        <tr><th>株主優待</th><td id="detail-benefit">-</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-ranking" class="page">
+            <div class="card">
+                <div class="card-title">🏆 オンラインランキング <span id="rankingSeasonLabel" style="font-size:.75rem;color:var(--text-sub);font-weight:500">読み込み中...</span></div>
+                <div class="ranking-controls">
+                    <select id="rankingPeriod" onchange="loadOnlineRanking()"><option value="monthly">月間シーズン</option><option value="weekly">週間シーズン</option></select>
+                    <select id="rankingMetric" onchange="loadOnlineRanking()"><option value="assets">総資産額</option><option value="rate">利益率</option><option value="profit">累計利益額</option><option value="overall">総合評価</option></select>
+                </div>
+                <div class="ranking-table-wrap"><table class="ranking-table"><thead><tr><th>順位</th><th>利用者</th><th>総資産額</th><th>利益率</th><th>累計利益額</th><th>総合評価</th></tr></thead><tbody id="onlineRankingBody"><tr><td colspan="6" style="text-align:center">ランキングを読み込んでいます...</td></tr></tbody></table></div>
+                <p style="font-size:.76rem;color:var(--text-sub);margin-top:10px">週間・月間ランキングは各シーズンの開始時点を基準に集計します。総資産額は現金＋保有株の時価評価額です。</p>
+            </div>
+            <div class="card">
+                <div class="card-title">取引履歴</div>
+                <div class="trade-backup-panel">
+                    <div style="font-weight:800;font-size:1.05rem;">☁️ 取引履歴バックアップ</div>
+                    <div style="color:var(--text-sub);font-size:.85rem;margin-top:5px;">取引を行うと、その取引1件だけが自動でGoogleフォームへ保存されます。</div>
+                    <div class="trade-backup-id"><span>あなたの識別子</span><code id="tradeIdentifier">発行中...</code></div>
+                    <div class="trade-backup-actions">
+                        <button type="button" class="trade-backup-btn" onclick="copyTradeIdentifier()">📋 識別子をコピー</button>
+                        <button type="button" class="trade-backup-btn secondary" onclick="openRecoveryRequest()">🛠️ 取引履歴復旧を依頼</button>
+                    </div>
+                    <div class="trade-backup-actions" style="margin-top:8px;">
+                        <button type="button" class="trade-backup-btn" onclick="exportRecoveryFile()">💾 復旧ファイルを保存</button>
+                        <button type="button" class="trade-backup-btn secondary" onclick="document.getElementById('recoveryFileInput').click()">📂 復旧ファイルを読み込む</button>
+                    </div>
+                    <input type="file" id="recoveryFileInput" accept=".json,application/json" style="display:none;" onchange="importRecoveryFile(event)">
+                    <div id="recoveryFileStatus" style="margin-top:8px;font-size:.82rem;color:var(--text-sub);"></div>
+                    <div class="trade-backup-note">復旧ファイルには、このブラウザのシミュレーター状態（残高・保有株・取引履歴・株価データ等）を保存します。復旧時は現在の状態を上書きします。</div>
+                </div>
+                <div style="overflow-x: auto;margin-top:18px;">
+                    <table>
+                        <thead><tr><th>日時</th><th>種別</th><th>銘柄</th><th>株数</th><th>約定単価</th><th>受渡金額</th></tr></thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-learn" class="page">
+            <div class="card">
+                <div class="card-title">🎓 株式投資の基本ガイド</div>
+                <div style="line-height: 1.6; font-size: 0.95rem;">
+                    <h3>1. 株式とは？</h3><p style="color: var(--text-sub); margin-bottom: 15px;">企業が資金調達のために発行する証券。株を購入することで、あなたはその企業の「オーナーの一人」となります。</p>
+                    <h3>2. 利益を得る2つの方法</h3><p style="color: var(--text-sub); margin-bottom: 15px;">・<b>キャピタルゲイン（売却益）:</b> 安い時に買って高く売る差額益。<br>・<b>インカムゲイン（配当金）:</b> 企業が得た利益の一部を株主に還元する現金。</p>
+                    <h3>3. チャートの種類と特徴</h3><p style="color: var(--text-sub); margin-bottom: 15px;">・<b>折れ線グラフ:</b> 時間経過に伴う終値の動向をシンプルに把握。<br>・<b>ローソク足チャート:</b> 始値・高値・安値・終値の4つを一覧でき相場の勢いを視覚的に分析。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 初回利用者登録 -->
+    <div id="playerRegistration" role="dialog" aria-modal="true" aria-label="利用者登録">
+        <div class="player-register-card">
+            <h2>株シミュレーター LIFE</h2>
+            <p>オンライン市場に参加するため、最初に利用者名を登録してください。利用者IDは自動発行され、このブラウザに保存されます。</p>
+            <label for="playerNameInput">利用者名</label>
+            <input id="playerNameInput" type="text" maxlength="16" autocomplete="nickname" placeholder="表示名" />
+            <p class="life-age-note">不適切な利用者名（暴言・差別表現・他人へのなりすまし・個人情報など）は禁止です。違反時は、名前の変更、ランキング非表示、アカウント停止・登録抹消等の措置を行う場合があります。</p>
+            <div class="life-legal-check-links">
+                <button type="button" onclick="lifeOpenLegal('terms')">📄 利用規約を確認する</button>
+                <button type="button" onclick="lifeOpenLegal('privacy')">🔒 プライバシーポリシーを確認する</button>
+            </div>
+            <fieldset class="life-age-category">
+                <legend>年齢について確認してください</legend>
+                <label><input type="radio" name="lifeAgeCategory" value="adult" onchange="lifeAgeCategoryChanged()" /> 私は登録時点で18歳以上です。</label>
+                <label><input type="radio" name="lifeAgeCategory" value="minor" onchange="lifeAgeCategoryChanged()" /> 私は登録時点で13歳以上18歳未満です。</label>
+            </fieldset>
+            <p class="life-age-note">13歳未満の方は、法定代理人の同意があっても登録・利用できません。</p>
+            <input id="lifeGuardianConfirm" type="checkbox" hidden />
+            <div class="life-guardian-entry" id="lifeGuardianEntry" style="display:none">
+                <div class="life-guardian-entry-text"><strong>18歳未満の方</strong><span id="lifeGuardianEntryStatus">法定代理人（親権者または未成年後見人）の同意確認が必要です。</span></div>
+                <button type="button" onclick="lifeOpenGuardianScreen()">法定代理人の同意を確認する</button>
+            </div>
+            <label class="life-age-confirm"><input id="lifeTermsConfirm" type="checkbox" /> 利用規約を読み、内容に同意します。</label>
+            <label class="life-age-confirm"><input id="lifePrivacyConfirm" type="checkbox" /> プライバシーポリシーを読み、情報の取り扱いに同意します。</label>
+            <p class="life-age-note">13歳未満の方は、保護者の同意があっても登録・利用できません。各項目を確認できない場合、登録はできません。</p>
+            <button id="playerRegisterButton" type="button" onclick="registerOnlinePlayer()">確認して登録する</button>
+            <div id="onlineStatus">氏名・住所・学校名などの個人情報は入力しないでください。</div>
+        </div>
+    </div>
+
+    <!-- 法定代理人同意 専用画面 -->
+    <section id="lifeGuardianScreen" role="dialog" aria-modal="true" aria-labelledby="lifeGuardianScreenTitle">
+        <div class="life-guardian-screen-card">
+            <div class="life-guardian-screen-kicker">GUARDIAN CONSENT</div>
+            <h2 id="lifeGuardianScreenTitle">法定代理人の同意確認</h2>
+            <p class="life-guardian-screen-lead">18歳未満の方は、登録を始める前に、親権者または未成年後見人などの法定代理人にこの画面を見せてください。</p>
+            <div class="life-guardian-screen-section">
+                <h3>法定代理人の方へ</h3>
+                <p>株シミュレーターLIFEオンラインの利用について、次の内容をご確認ください。</p>
+                <ul>
+                    <li>本サービスは、架空の銘柄を使った株式取引シミュレーションです。</li>
+                    <li>利用規約およびプライバシーポリシーに、利用条件や情報の取り扱いが記載されています。</li>
+                    <li>利用者が13歳未満の場合は、同意の有無にかかわらず登録・利用できません。</li>
+                    <li>18歳未満の利用者は、法定代理人の同意を得てから利用を開始する必要があります。</li>
+                </ul>
+                <div class="life-guardian-screen-links">
+                    <button type="button" onclick="lifeOpenLegal('terms')">📄 利用規約を読む</button>
+                    <button type="button" onclick="lifeOpenLegal('privacy')">🔒 プライバシーポリシーを読む</button>
+                </div>
+            </div>
+            <label class="life-guardian-screen-check"><input id="lifeGuardianScreenCheck" type="checkbox" onchange="lifeGuardianScreenCheckChanged()" /> <span>私は法定代理人本人です。上記の説明と利用規約・プライバシーポリシーを確認し、18歳未満の利用者が本サービスを利用することに同意します。</span></label>
+            <p class="life-guardian-screen-note">※法定代理人ご本人が内容を確認し、ご自身でチェックしてください。同意しない場合は登録を進めないでください。</p>
+            <div class="life-guardian-screen-actions">
+                <button type="button" class="life-guardian-back" onclick="lifeCloseGuardianScreen()">戻る</button>
+                <button type="button" id="lifeGuardianScreenAccept" class="life-guardian-accept" disabled onclick="lifeConfirmGuardianConsent()">同意を確認して登録画面へ戻る</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 初回 識別子案内 -->
+    <div id="identifierWelcome" role="dialog" aria-modal="true" aria-label="識別子の保存案内">
+        <div class="identifier-welcome-card">
+            <div class="identifier-welcome-title">🔐 まず識別子を保存してください</div>
+            <div class="identifier-welcome-sub">
+                この識別子は、取引履歴の保存・復旧に使用します。<br>
+                パスワードマネージャーなど、安全な場所にも保存しておくことをおすすめします。
+            </div>
+            <div class="identifier-big"><code id="welcomeTradeIdentifier">発行中...</code></div>
+            <div class="identifier-welcome-actions">
+                <button type="button" class="identifier-copy" onclick="copyTradeIdentifier()">📋 識別子をコピー</button>
+                <button type="button" class="identifier-save" onclick="saveIdentifierText()">💾 識別子を保存</button>
+            </div>
+            <div id="identifierSaveStatus" class="identifier-save-status"></div>
+            <button type="button" class="identifier-start" onclick="closeIdentifierWelcome()">保存したので開始する</button>
+        </div>
+    </div>
+
+    <!-- アクセス情報記録用（Googleフォーム） -->
+    <iframe name="accessRecordFrame" id="accessRecordFrame" style="display:none;" title="access record"></iframe>
+    <form id="accessRecordForm" action="#" method="POST" target="accessRecordFrame" style="display:none;" aria-hidden="true">
+        <input type="hidden" name="entry.1390942320" id="accessRecordDate">
+        <input type="hidden" name="entry.600562719" id="accessRecordUrl">
+        <input type="hidden" name="entry.32786128" id="accessRecordTitle">
+        <input type="hidden" name="entry.318452337" id="accessRecordDevice">
+        <input type="hidden" name="entry.1152326462" id="accessRecordOS">
+        <input type="hidden" name="entry.777710718" id="accessRecordBrowser">
+    </form>
+
+    <!-- 取引履歴記録用Googleフォーム：識別子＋データ -->
+    <!-- Googleフォームは「識別子」「データ」の2項目だけ使用します。 -->
+    <iframe name="tradeRecordFrame" id="tradeRecordFrame" style="display:none;" title="trade record"></iframe>
+    <form id="tradeRecordForm" action="#" method="POST" target="tradeRecordFrame" style="display:none;" aria-hidden="true">
+        <input type="hidden" name="entry.1518187345" id="tradeRecordIdentifier">
+        <input type="hidden" name="entry.376964637" id="tradeRecordData">
+    </form>
+
+    <div id="accessRecordNotice" role="dialog" aria-label="アクセス情報の記録について">
+        <div class="access-record-text">
+            このサイトでは、アクセス日時・ページURL・ページタイトル・端末・OS・ブラウザ等のアクセス情報を記録しています。
+        </div>
+        <button type="button" class="access-record-ok" id="accessRecordOk">OK</button>
+    </div>
+
+    <nav>
+        <button class="nav-btn active" onclick="navigateTo('dashboard', this)"><span>📊</span>資産状況</button>
+        <button class="nav-btn" onclick="navigateTo('market', this)"><span>📈</span>銘柄一覧</button>
+        <button class="nav-btn" onclick="navigateTo('ranking', this)"><span>🏆</span>ランキング</button>
+        <button class="nav-btn" onclick="navigateTo('learn', this)"><span>🎓</span>学習</button>
+        <button class="nav-btn" type="button" onclick="lifeOpenLegal('terms')"><span>📄</span>利用規約</button>
+        <button class="nav-btn" type="button" onclick="lifeOpenLegal('privacy')"><span>🔒</span>プライバシー</button>
+        <button class="nav-btn" type="button" onclick="lifeOpenSettings()"><span>⚙️</span>設定</button>
+    </nav>
+
+    <div id="env-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2>⚠️ ご利用上の注意点</h2>
+            <div class="notice-box" style="margin-top: 15px;">
+                <b>【シミュレーションの仕様】</b><br>
+                ・架空の企業データを使用した投資シミュレーターです。<br>
+                ・<b>平日 9:00〜11:30 / 12:30〜15:00（通常）<br>および 18:00〜22:59（夜間PTS）</b>のみ株価が変動し取引可能です。<br>
+                ・データはお使いのブラウザに自動保存されます。
+            </div>
+            <h4 style="margin-top: 10px; font-size: 0.9rem;">💻 動作環境チェック</h4>
+            <div style="margin: 10px 0; font-size: 0.85rem;" id="env-results"></div>
+            <button class="btn" onclick="closeEnvModal()">注意事項を確認し開始する</button>
+        </div>
+    </div>
+
+    <script>
+        const companyNames = [
+            { name: "何でも会社", code: "1001", sector: "テック", price: 3200, per: 28.5, div: 1.5, founded: 2026, benefit: "自社サービスチケット", desc: "万能型テック企業。" },
+            { name: "時計のとんけい", code: "1002", sector: "小売", price: 1450, per: 13.8, div: 3.2, founded: 2025, benefit: "購入割引券", desc: "老舗の高級腕時計店。" },
+            { name: "いろいろ電気", code: "1003", sector: "小売", price: 980, per: 11.2, div: 4.0, founded: 1999, benefit: "お買い物券 2,000円分", desc: "大型家電量販店。" },
+            { name: "AI未来株式会社", code: "3901", sector: "情報通信", price: 2450, per: 32.4, div: 0.8, founded: 2018, benefit: "AIツール1年間無償", desc: "最先端テック企業。" },
+            { name: "ネクスト通信株式会社", code: "9402", sector: "情報通信", price: 1280, per: 12.1, div: 3.5, founded: 2005, benefit: "通信料金割引クーポン", desc: "次世代6G通信インフラ。" },
+            { name: "バイナリテック", code: "4003", sector: "情報通信", price: 5600, per: 45.0, div: 0.0, founded: 2015, benefit: "セキュリティグッズ", desc: "クラウド基盤およびサイバーセキュリティ。" },
+            { name: "未来エネルギー", code: "9504", sector: "電気・ガス", price: 890, per: 8.5, div: 4.2, founded: 1998, benefit: "クリーンエネルギーギフト", desc: "水素および再生可能エネルギー。" },
+            { name: "サステナフード", code: "2805", sector: "食料品", price: 1540, per: 18.2, div: 2.1, founded: 2012, benefit: "代替肉商品詰め合わせ", desc: "環境配慮型食品の企画・販売。" },
+            { name: "サイバー・モビリティ", code: "7206", sector: "輸送機器", price: 3400, per: 14.8, div: 2.8, founded: 2008, benefit: "EV充電スポット10%オフ", desc: "完全自動運転電気自動車（EV）の開発。" },
+            { name: "銀河重工株式会社", code: "7007", sector: "機械", price: 4100, per: 11.2, div: 1.9, founded: 1975, benefit: "プラネタリウムペア招待券", desc: "宇宙探査用ロケットの製造。" },
+            { name: "ナノメディカル創薬", code: "4508", sector: "医薬品", price: 7800, per: 58.0, div: 0.5, founded: 2016, benefit: "ヘルスケア測定機器", desc: "がん標的治療薬の研究。" },
+            { name: "フロンティア不動産", code: "8809", sector: "不動産", price: 980, per: 7.9, div: 5.0, founded: 1990, benefit: "商品券 3,000円分", desc: "スマートシティ開発。" },
+            { name: "グローバル・トレード", code: "8010", sector: "卸売業", price: 2150, per: 9.4, div: 3.8, founded: 1982, benefit: "特産品カタログギフト", desc: "レアメタルを扱う総合商社。" },
+            { name: "ブルースカイ航空", code: "9211", sector: "陸海空運", price: 1890, per: 15.6, div: 1.2, founded: 2001, benefit: "国内航空券50%割引", desc: "国際旅客および精密機器空輸。" },
+            { name: "ネオ・リテールHD", code: "3012", sector: "小売業", price: 650, per: 13.5, div: 2.5, founded: 1988, benefit: "店舗買い物券 1,000円", desc: "無人店舗スーパーチェーン。" },
+            { name: "セントラル・マネー", code: "8313", sector: "銀行業", price: 540, per: 6.8, div: 4.8, founded: 1950, benefit: "定期預金金利優遇", desc: "フィンテックに特化した銀行。" },
+            { name: "ハイパー・マテリアル", code: "4114", sector: "化学", price: 2980, per: 16.3, div: 2.2, founded: 2003, benefit: "高機能素材マスクセット", desc: "次世代半導体向け素材。" },
+            { name: "ソーラーパワー発電", code: "9515", sector: "電気・ガス", price: 1120, per: 10.5, div: 3.9, founded: 2011, benefit: "ソーラーバッテリー", desc: "宇宙太陽光発電の実用化研究。" },
+            { name: "スマートロジ", code: "9016", sector: "陸海空運", price: 2310, per: 17.1, div: 1.8, founded: 2014, benefit: "宅配送料無償チケット", desc: "ドローン配送ネットワーク完備。" },
+            { name: "デジタル・エンタメ", code: "9617", sector: "サービス", price: 4890, per: 28.9, div: 1.0, founded: 2017, benefit: "VR無料視聴コード", desc: "メタバースプラットフォーム運営。" },
+            { name: "量子コンピューティング", code: "6718", sector: "電気機器", price: 9200, per: 82.0, div: 0.0, founded: 2020, benefit: "技術白書・ステッカー", desc: "量子コンピュータのハードウェア開発。" },
+            { name: "エコ・アグリテック", code: "1319", sector: "農林水産", price: 1430, per: 14.2, div: 2.0, founded: 2019, benefit: "無農薬野菜セット", desc: "自動化室内垂直農場を展開。" },
+            { name: "フェニックス保険", code: "8720", sector: "保険業", price: 3100, per: 11.5, div: 4.1, founded: 1965, benefit: "防災緊急キット", desc: "AIを活用したリスク査定損保。" },
+            { name: "ミライ食品グループ", code: "1004", sector: "食料品", price: 1280, per: 16.2, div: 2.4, founded: 2004, benefit: "食品詰め合わせ", desc: "冷凍食品・加工食品を展開する食品会社。" },
+            { name: "グリーン農業研究所", code: "1005", sector: "農林水産", price: 1760, per: 19.4, div: 1.7, founded: 2016, benefit: "栽培キット", desc: "スマート農業と植物工場の研究開発。" },
+            { name: "オーシャン物流", code: "1006", sector: "陸海空運", price: 940, per: 10.8, div: 3.1, founded: 1997, benefit: "配送割引券", desc: "国内物流と倉庫管理を手がける企業。" },
+            { name: "北斗建設ホールディングス", code: "1007", sector: "建設業", price: 2240, per: 12.7, div: 2.6, founded: 1987, benefit: "住宅点検サービス", desc: "都市開発・公共インフラ整備を展開。" },
+            { name: "クリスタル化学", code: "1008", sector: "化学", price: 3150, per: 17.9, div: 1.9, founded: 2009, benefit: "研究レポート", desc: "電子材料や環境対応素材を製造。" },
+            { name: "ライトウェーブ通信", code: "1009", sector: "情報通信", price: 1680, per: 21.5, div: 2.2, founded: 2013, benefit: "通信利用割引", desc: "法人向けネットワークサービスを提供。" },
+            { name: "ネオバンク金融", code: "1010", sector: "銀行業", price: 760, per: 8.4, div: 3.6, founded: 2010, benefit: "金融セミナー招待", desc: "デジタル決済とオンライン金融を展開。" },
+            { name: "さくら医薬品", code: "1011", sector: "医薬品", price: 2860, per: 24.1, div: 1.4, founded: 2001, benefit: "健康情報冊子", desc: "医薬品の研究・製造・販売を行う。" },
+            { name: "スター精密機器", code: "1012", sector: "電気機器", price: 4380, per: 26.8, div: 1.1, founded: 1995, benefit: "製品体験クーポン", desc: "精密センサーと産業用機器を開発。" },
+            { name: "アーバン不動産開発", code: "1013", sector: "不動産", price: 1320, per: 9.8, div: 4.0, founded: 2006, benefit: "施設利用券", desc: "商業施設と賃貸住宅を管理・開発。" },
+            { name: "トラベルリンク", code: "1014", sector: "サービス", price: 890, per: 14.2, div: 0.9, founded: 2011, benefit: "旅行予約割引", desc: "旅行予約・地域観光サービスを運営。" },
+            { name: "フレッシュマート", code: "1015", sector: "小売業", price: 620, per: 11.6, div: 2.8, founded: 1992, benefit: "買い物優待券", desc: "食品スーパーとネット販売を展開。" },
+            { name: "東都電力ネット", code: "1016", sector: "電気・ガス", price: 1540, per: 10.1, div: 3.3, founded: 1981, benefit: "省エネ相談券", desc: "電力供給と送配電設備の保守を行う。" },
+            { name: "コスモ宇宙開発", code: "1017", sector: "機械", price: 5120, per: 38.2, div: 0.0, founded: 2021, benefit: "施設見学案内", desc: "人工衛星と宇宙関連機器を開発。" },
+            { name: "データクラウド研究所", code: "1018", sector: "情報通信", price: 3650, per: 34.7, div: 0.5, founded: 2019, benefit: "クラウド利用券", desc: "データ分析基盤とクラウドサービスを提供。" },
+            { name: "リサイクル未来", code: "1019", sector: "サービス", price: 1180, per: 15.3, div: 2.0, founded: 2007, benefit: "エコグッズ", desc: "資源回収と再生素材の製造を展開。" },
+            { name: "ハーモニー音楽社", code: "1020", sector: "サービス", price: 2040, per: 22.6, div: 1.3, founded: 2002, benefit: "配信サービス利用券", desc: "音楽配信とイベント企画を手がける。" },
+            { name: "セーフティ損害保険", code: "1021", sector: "保険業", price: 2480, per: 10.9, div: 3.8, founded: 1978, benefit: "防災用品割引", desc: "個人・法人向け損害保険を提供。" },
+            { name: "アクア水環境", code: "1022", sector: "電気・ガス", price: 970, per: 13.1, div: 2.5, founded: 2015, benefit: "水質検査割引", desc: "水処理設備と水質管理技術を開発。" },
+            { name: "モビリティ部品工業", code: "1023", sector: "輸送機器", price: 1870, per: 12.4, div: 2.1, founded: 1990, benefit: "カー用品割引", desc: "自動車向け電子部品を製造。" },
+            { name: "グロウ教育サービス", code: "1024", sector: "サービス", price: 1430, per: 18.8, div: 1.0, founded: 2014, benefit: "学習コンテンツ利用券", desc: "オンライン教材と学習支援を提供。" },
+            { name: "パシフィック水産", code: "1025", sector: "水産・農林", price: 1120, per: 9.7, div: 3.0, founded: 1989, benefit: "水産品セット", desc: "水産物の加工・流通を行う。" },
+            { name: "レインボー印刷", code: "1026", sector: "その他製品", price: 830, per: 12.2, div: 2.7, founded: 1996, benefit: "印刷サービス割引", desc: "出版物やパッケージの印刷を行う。" },
+            { name: "フューチャー半導体", code: "1027", sector: "電気機器", price: 6280, per: 41.5, div: 0.4, founded: 2017, benefit: "技術資料", desc: "半導体設計と製造技術の開発。" },
+            { name: "シティホテルズ", code: "1028", sector: "サービス", price: 1560, per: 17.2, div: 2.2, founded: 1985, benefit: "宿泊割引券", desc: "都市型ホテルと観光施設を運営。" },
+            { name: "エコモビリティ交通", code: "1029", sector: "陸海空運", price: 720, per: 13.6, div: 1.8, founded: 2018, benefit: "乗車クーポン", desc: "地域交通と次世代モビリティを展開。" },
+            { name: "ライフサポートHD", code: "1030", sector: "小売業", price: 1980, per: 15.1, div: 2.9, founded: 2003, benefit: "生活用品割引", desc: "生活用品の販売と会員サービスを提供。" },
+            { name: "オーロラデータ", code: "1101", sector: "情報通信", price: 1820, per: 22.1, div: 1.4, founded: 2019, benefit: "クラウド利用クーポン", desc: "企業向けデータ基盤を開発。" },
+            { name: "みらい製薬研究所", code: "1102", sector: "医薬品", price: 2640, per: 19.8, div: 1.7, founded: 2008, benefit: "健康情報セット", desc: "新しい医薬品の研究開発を行う。" },
+            { name: "グリーン建材", code: "1103", sector: "建設業", price: 1380, per: 12.4, div: 2.8, founded: 1996, benefit: "住宅設備割引券", desc: "環境配慮型の建築資材を製造。" },
+            { name: "北辰モーターズ", code: "1104", sector: "輸送機器", price: 3260, per: 16.7, div: 2.0, founded: 2011, benefit: "点検サービス券", desc: "電動モビリティを開発する。" },
+            { name: "スカイネット物流", code: "1105", sector: "陸海空運", price: 940, per: 10.2, div: 3.4, founded: 2003, benefit: "配送割引券", desc: "物流ネットワークを運営。" },
+            { name: "ひかり半導体", code: "1106", sector: "電気機器", price: 5840, per: 37.2, div: 0.6, founded: 2016, benefit: "技術資料", desc: "半導体部品を設計・製造。" },
+            { name: "アース水処理", code: "1107", sector: "電気・ガス", price: 1160, per: 11.7, div: 3.1, founded: 2007, benefit: "水質検査割引", desc: "水処理設備と環境技術を提供。" },
+            { name: "トラスト保険サービス", code: "1108", sector: "保険業", price: 2180, per: 10.8, div: 3.9, founded: 1988, benefit: "防災用品割引", desc: "個人向け保険サービスを展開。" },
+            { name: "まるごとマーケット", code: "1109", sector: "小売業", price: 720, per: 14.1, div: 2.5, founded: 1994, benefit: "買い物優待券", desc: "地域密着型の小売チェーン。" },
+            { name: "フードテックラボ", code: "1110", sector: "食料品", price: 1940, per: 21.3, div: 1.2, founded: 2020, benefit: "食品試食セット", desc: "食品製造の新技術を研究。" },
+            { name: "東都メガバンク", code: "1111", sector: "銀行業", price: 860, per: 8.9, div: 3.7, founded: 1972, benefit: "金融相談優待", desc: "個人・法人向け金融サービス。" },
+            { name: "ネオ素材工業", code: "1112", sector: "化学", price: 2750, per: 15.6, div: 2.3, founded: 2005, benefit: "素材サンプル", desc: "高機能樹脂や新素材を製造。" },
+            { name: "リゾートリンク", code: "1113", sector: "サービス", price: 1680, per: 18.1, div: 1.8, founded: 1999, benefit: "宿泊割引券", desc: "観光施設と宿泊施設を運営。" },
+            { name: "セントラル鉄道網", code: "1114", sector: "陸海空運", price: 2120, per: 13.2, div: 2.6, founded: 1968, benefit: "乗車クーポン", desc: "都市間交通と駅施設を運営。" },
+            { name: "ミライ精密", code: "1115", sector: "電気機器", price: 4380, per: 25.4, div: 1.0, founded: 2002, benefit: "製品体験券", desc: "産業用センサーを開発。" },
+            { name: "ブルーオーシャン水産", code: "1116", sector: "水産・農林", price: 1280, per: 10.4, div: 2.9, founded: 1986, benefit: "水産品セット", desc: "水産物の加工・販売を行う。" },
+            { name: "スマートホームズ", code: "1117", sector: "不動産", price: 1560, per: 11.3, div: 3.2, founded: 2010, benefit: "住宅点検券", desc: "スマート住宅の開発・管理。" },
+            { name: "デジタル出版ネット", code: "1118", sector: "その他製品", price: 980, per: 16.5, div: 1.6, founded: 2013, benefit: "電子書籍クーポン", desc: "電子出版と印刷サービスを提供。" },
+            { name: "エナジーサークル", code: "1119", sector: "電気・ガス", price: 2460, per: 14.8, div: 2.7, founded: 2017, benefit: "省エネ診断券", desc: "再生可能エネルギー設備を開発。" },
+            { name: "コスモロボティクス", code: "1120", sector: "機械", price: 6120, per: 42.0, div: 0.3, founded: 2022, benefit: "施設見学案内", desc: "産業用ロボットを開発。" },
+            { name: "ハーベスト農園", code: "1121", sector: "農林水産", price: 890, per: 13.5, div: 2.1, founded: 2009, benefit: "栽培キット", desc: "スマート農業と農産物販売。" },
+            { name: "ライフケアネット", code: "1122", sector: "サービス", price: 1420, per: 17.4, div: 1.5, founded: 2001, benefit: "生活支援クーポン", desc: "生活支援サービスを提供。" },
+            { name: "オービット航空", code: "1123", sector: "陸海空運", price: 2980, per: 18.7, div: 1.1, founded: 2006, benefit: "旅行割引券", desc: "国内外の航空輸送を手がける。" },
+            { name: "サンライズ商事", code: "1124", sector: "卸売業", price: 1860, per: 9.8, div: 3.3, founded: 1980, benefit: "カタログギフト", desc: "幅広い商品を扱う専門商社。" },
+            { name: "クリーンケミカル", code: "1125", sector: "化学", price: 1640, per: 13.9, div: 2.4, founded: 1997, benefit: "洗浄用品セット", desc: "環境対応型の化学製品を製造。" },
+            { name: "ユニバーサル決済", code: "1126", sector: "銀行業", price: 1240, per: 19.2, div: 1.0, founded: 2018, benefit: "決済手数料割引", desc: "キャッシュレス決済基盤を提供。" },
+            { name: "スターライト通信", code: "1127", sector: "情報通信", price: 2320, per: 20.6, div: 1.9, founded: 2012, benefit: "通信料金割引", desc: "通信サービスとネットワークを運営。" },
+            { name: "ファインメディカル", code: "1128", sector: "医薬品", price: 3560, per: 28.1, div: 0.8, founded: 2014, benefit: "健康測定サービス", desc: "医療関連製品の研究開発。" },
+            { name: "アーバンリニューアル", code: "1129", sector: "建設業", price: 1980, per: 13.7, div: 2.2, founded: 1991, benefit: "住宅相談券", desc: "建物の改修と都市再生を行う。" },
+            { name: "モーニングカフェHD", code: "1130", sector: "小売業", price: 680, per: 16.0, div: 2.0, founded: 2000, benefit: "カフェ利用券", desc: "カフェチェーンを運営。" },
+            { name: "クォンタムリンク", code: "1131", sector: "電気機器", price: 7420, per: 55.0, div: 0.0, founded: 2023, benefit: "技術レポート", desc: "量子技術関連機器を開発。" },
+            { name: "ネイチャーフーズ", code: "1132", sector: "食料品", price: 1360, per: 15.8, div: 2.6, founded: 1993, benefit: "食品詰め合わせ", desc: "自然素材を使った食品を製造。" },
+            { name: "グローバルホテルズ", code: "1133", sector: "サービス", price: 2240, per: 19.3, div: 2.1, founded: 1984, benefit: "宿泊優待券", desc: "ホテルと宿泊予約サービスを展開。" },
+            { name: "東西電力サービス", code: "1134", sector: "電気・ガス", price: 1080, per: 9.6, div: 4.0, founded: 1979, benefit: "省エネ相談券", desc: "電力関連設備の保守を行う。" },
+            { name: "フロンティア機械", code: "1135", sector: "機械", price: 3840, per: 17.5, div: 1.7, founded: 1998, benefit: "工場見学案内", desc: "産業機械と自動化設備を製造。" },
+            { name: "ペイメントクラウド", code: "1136", sector: "情報通信", price: 3120, per: 31.2, div: 0.5, founded: 2021, benefit: "サービス利用券", desc: "オンライン決済システムを開発。" },
+            { name: "リサイクルパートナーズ", code: "1137", sector: "サービス", price: 920, per: 14.4, div: 2.8, founded: 2004, benefit: "エコグッズ", desc: "資源回収と再利用事業を展開。" },
+            { name: "みどり生命科学", code: "1138", sector: "医薬品", price: 4920, per: 34.6, div: 0.4, founded: 2015, benefit: "研究レポート", desc: "生命科学分野の研究を行う。" },
+            { name: "パシフィック不動産", code: "1139", sector: "不動産", price: 1740, per: 10.6, div: 3.6, founded: 1989, benefit: "施設利用券", desc: "商業施設とオフィスを管理。" },
+            { name: "ネクストモビリティ", code: "1140", sector: "輸送機器", price: 2680, per: 18.0, div: 1.4, founded: 2019, benefit: "充電割引券", desc: "次世代の移動サービスを開発。" },
+            { name: "オレンジ通信販売", code: "1141", sector: "小売業", price: 540, per: 12.8, div: 3.0, founded: 1995, benefit: "買い物割引券", desc: "オンライン小売事業を運営。" },
+            { name: "グリーンフィールド水産", code: "1142", sector: "水産・農林", price: 1540, per: 11.1, div: 2.5, founded: 1990, benefit: "水産品優待", desc: "持続可能な水産事業を展開。" },
+            { name: "シグナル精工", code: "1143", sector: "電気機器", price: 3260, per: 23.7, div: 1.2, founded: 2007, benefit: "製品カタログ", desc: "電子部品と計測機器を製造。" },
+            { name: "アクティブ損害保険", code: "1144", sector: "保険業", price: 2860, per: 12.3, div: 3.4, founded: 1976, benefit: "防災セット割引", desc: "損害保険とリスク管理を提供。" },
+            { name: "ネオアグリ研究所", code: "1145", sector: "農林水産", price: 1180, per: 18.6, div: 1.3, founded: 2020, benefit: "家庭菜園キット", desc: "植物工場と農業技術を研究。" },
+            { name: "シティメディア", code: "1146", sector: "その他製品", price: 860, per: 15.2, div: 2.1, founded: 2002, benefit: "コンテンツ利用券", desc: "デジタルコンテンツを制作。" },
+            { name: "ハイランド物流", code: "1147", sector: "陸海空運", price: 1320, per: 11.8, div: 3.0, founded: 1985, benefit: "配送優待券", desc: "倉庫・輸送サービスを提供。" },
+            { name: "サステナブル建設", code: "1148", sector: "建設業", price: 2420, per: 14.5, div: 2.0, founded: 2016, benefit: "建築相談券", desc: "省エネ建築とインフラ整備。" },
+            { name: "ルミナスエナジー", code: "1149", sector: "電気・ガス", price: 1860, per: 16.1, div: 1.8, founded: 2022, benefit: "電力プラン割引", desc: "蓄電池と再生可能エネルギー。" },
+            { name: "ワールドトレードネット", code: "1150", sector: "卸売業", price: 2080, per: 10.7, div: 3.1, founded: 1992, benefit: "特産品ギフト", desc: "国内外の商品流通を手がける。" }
+        ];
+
+        const STORAGE_KEY = 'tradePro_saveData_v6';
+        let state = { cash: 1000000, portfolio: {}, history: [], stocks: [], usedCoupons: [] };
+        let newsList = [];
+        let selectedStockCode = null;
+        let mainChart = null;
+        let currentChartType = 'candlestick';
+        let isMarketOpen = false;
+
+        function initApp() {
+            loadSavedState();
+            runEnvironmentCheck();
+            setInterval(updateMarketTimeAndStatus, 1000);
+            setInterval(simulateMarketPriceChanges, 3000);
+            renderDashboard();
+            renderMarketGrid();
+            updateMarketTimeAndStatus();
+        }
+
+        function runEnvironmentCheck() {
+            const hasSeen = localStorage.getItem('tradePro_hasSeenModal');
+            if (hasSeen === 'true') {
+                document.getElementById('env-modal').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('env-modal').style.display = 'flex';
+            const resultsContainer = document.getElementById('env-results');
+            const isCanvasSupported = !!window.CanvasRenderingContext2D;
+            const isStorageSupported = typeof(Storage) !== "undefined";
+            
+            resultsContainer.innerHTML = `
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span>ブラウザ互換性 (Canvas API):</span>
+                    <span style="color:${isCanvasSupported ? 'var(--accent-green)' : 'var(--accent-red)'}">${isCanvasSupported ? '◎ 推奨' : '× 非対応'}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span>ローカル保存機能:</span>
+                    <span style="color:${isStorageSupported ? 'var(--accent-green)' : 'var(--accent-red)'}">${isStorageSupported ? '◎ 推奨' : '× 非対応'}</span>
+                </div>
+            `;
+        }
+
+        function closeEnvModal() {
+            document.getElementById('env-modal').style.display = 'none';
+            localStorage.setItem('tradePro_hasSeenModal', 'true');
+        }
+
+        function loadSavedState() {
+            const savedState = localStorage.getItem(STORAGE_KEY);
+            if (savedState) {
+                try {
+                    state = JSON.parse(savedState);
+                    if (!state.usedCoupons) state.usedCoupons = [];
+                    if (!state.stocks || state.stocks.length === 0) setupInitialStocks();
+                } catch(e) { setupInitialStocks(); }
+            } else { setupInitialStocks(); }
+        }
+
+        function setupInitialStocks() {
+            const now = Date.now();
+            state.stocks = companyNames.map(c => {
+                let ohlcHistory = [];
+                let currentP = c.price;
+                for(let i = 20; i >= 1; i--) {
+                    let open = currentP;
+                    let change = Math.floor((Math.random() - 0.49) * (currentP * 0.02));
+                    let close = Math.max(10, open + change);
+                    ohlcHistory.push({ x: now - (i * 30000), o: open, h: Math.max(open, close)+5, l: Math.min(open, close)-5, c: close });
+                    currentP = close;
+                }
+                return { ...c, previousPrice: currentP, ohlcHistory: ohlcHistory };
+            });
+            saveState();
+        }
+
+        function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+        // ===== 復旧ファイル =====
+        const RECOVERY_FILE_VERSION = '1.0';
+
+        function buildRecoveryData() {
+            return {
+                fileType: 'stock-simulator-recovery',
+                fileVersion: RECOVERY_FILE_VERSION,
+                simulatorVersion: '26.1',
+                identifier: getTradeIdentifier(),
+                exportedAt: new Date().toISOString(),
+                state: JSON.parse(JSON.stringify(state))
+            };
+        }
+
+        function exportRecoveryFile() {
+            try {
+                const data = buildRecoveryData();
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const id = getTradeIdentifier().replace(/[^A-Za-z0-9_-]/g, '_');
+                const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+                a.href = url;
+                a.download = `株シミュレーターLIFE_復旧_${id}_${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                const status = document.getElementById('recoveryFileStatus');
+                if (status) status.textContent = '✅ 復旧ファイルを保存しました。';
+            } catch (e) {
+                console.error(e);
+                alert('復旧ファイルの保存に失敗しました。');
+            }
+        }
+
+        function importRecoveryFile(event) {
+            const input = event.target;
+            const file = input.files && input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const data = JSON.parse(String(reader.result || ''));
+
+                    if (!data || data.fileType !== 'stock-simulator-recovery') {
+                        throw new Error('復旧ファイルではありません。');
+                    }
+                    if (!data.state || typeof data.state !== 'object') {
+                        throw new Error('シミュレーターのデータが見つかりません。');
+                    }
+                    if (!Array.isArray(data.state.history) || !data.state.portfolio || !Array.isArray(data.state.stocks)) {
+                        throw new Error('復旧データの形式が正しくありません。');
+                    }
+
+                    const currentId = getTradeIdentifier();
+                    const fileId = String(data.identifier || '');
+                    if (fileId && fileId !== currentId) {
+                        const ok = confirm(
+                            'この復旧ファイルの識別子は現在の識別子と異なります。\n\n' +
+                            '現在: ' + currentId + '\n' +
+                            'ファイル: ' + fileId + '\n\n' +
+                            'ファイル側の識別子に切り替えて復旧しますか？'
+                        );
+                        if (!ok) return;
+                        localStorage.setItem(TRADE_IDENTIFIER_KEY, fileId);
+                    }
+
+                    if (!confirm('現在のシミュレーターのデータを、この復旧ファイルの内容で上書きします。\n\n続行しますか？')) {
+                        return;
+                    }
+
+                    state = JSON.parse(JSON.stringify(data.state));
+                    if (!state.usedCoupons) state.usedCoupons = [];
+                    if (!Array.isArray(state.history)) state.history = [];
+                    if (!state.portfolio || typeof state.portfolio !== 'object') state.portfolio = {};
+                    if (!Array.isArray(state.stocks) || state.stocks.length === 0) setupInitialStocks();
+                    saveState();
+
+                    // 画面を復旧後の状態に更新
+                    if (typeof renderDashboard === 'function') renderDashboard();
+                    if (typeof renderMarketGrid === 'function') renderMarketGrid();
+                    if (typeof updateMarketTimeAndStatus === 'function') updateMarketTimeAndStatus();
+                    if (typeof renderHistory === 'function') renderHistory();
+                    initTradeIdentifier();
+
+                    const status = document.getElementById('recoveryFileStatus');
+                    if (status) status.textContent = '✅ 復旧しました。識別子: ' + getTradeIdentifier();
+                    alert('復旧が完了しました。');
+                } catch (e) {
+                    console.error(e);
+                    alert('復旧ファイルを読み込めませんでした。\n\n' + e.message);
+                } finally {
+                    input.value = '';
+                }
+            };
+            reader.onerror = function() {
+                alert('復旧ファイルの読み込みに失敗しました。');
+                input.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function resetAllData() {
+            if(confirm("全取引データと資産状態をリセットして初期状態に戻しますか？")) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem('tradePro_hasSeenModal');
+                location.reload();
+            }
+        }
+
+        function checkMarketOpenStatus(now) {
+            // 日本時間に統一（端末のタイムゾーン設定に左右されない）
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Tokyo', weekday: 'short', hour: '2-digit',
+                minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(now);
+            const part = key => parts.find(x => x.type === key)?.value || '';
+            const weekday = part('weekday');
+            if (weekday === 'Sat' || weekday === 'Sun') return { open: false, mode: '閉場中' };
+            const timeVal = Number(part('hour')) * 100 + Number(part('minute'));
+
+            const isMorningSession = (timeVal >= 900 && timeVal < 1130);
+            const isAfternoonSession = (timeVal >= 1230 && timeVal < 1500);
+            const isNightSession = (timeVal >= 1800 && timeVal <= 2259);
+
+            if (isMorningSession || isAfternoonSession) {
+                return { open: true, mode: '通常市場' };
+            } else if (isNightSession) {
+                return { open: true, mode: '夜間取引(PTS)' };
+            } else {
+                return { open: false, mode: '閉場中' };
+            }
+        }
+
+        function updateMarketTimeAndStatus() {
+            const now = new Date();
+            const timeStr = now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('market-time').innerText = timeStr;
+
+            const marketStatus = checkMarketOpenStatus(now);
+            isMarketOpen = marketStatus.open;
+            
+            const statusEl = document.getElementById('market-status');
+            const warningEl = document.getElementById('market-warning-panel');
+            const buyBtn = document.getElementById('buy-btn');
+            const sellBtn = document.getElementById('sell-btn');
+
+            if(isMarketOpen) {
+                statusEl.innerText = `● ${marketStatus.mode}`;
+                statusEl.className = marketStatus.mode === '夜間取引(PTS)' ? "status-badge status-night" : "status-badge status-open";
+                if(warningEl) warningEl.style.display = 'none';
+                if(buyBtn) buyBtn.disabled = false;
+                if(sellBtn) sellBtn.disabled = false;
+            } else {
+                statusEl.innerText = "✖ 閉場 (時間外)";
+                statusEl.className = "status-badge status-closed";
+                if(warningEl) warningEl.style.display = 'block';
+                if(buyBtn) buyBtn.disabled = true;
+                if(sellBtn) sellBtn.disabled = true;
+            }
+        }
+
+        function simulateMarketPriceChanges() {
+            if(!isMarketOpen) return;
+            const now = Date.now();
+            state.stocks.forEach(stock => {
+                stock.previousPrice = stock.price;
+                let open = stock.price;
+                let changePercent = (Math.random() - 0.495) * 0.02;
+                let close = Math.round(open * (1 + changePercent));
+                if(close < 10) close = 10;
+                
+                stock.price = close;
+                stock.ohlcHistory.push({ x: now, o: open, h: Math.max(open, close)+5, l: Math.min(open, close)-5, c: close });
+                if(stock.ohlcHistory.length > 40) stock.ohlcHistory.shift();
+            });
+
+            if(Math.random() < 0.25) generateNews();
+            saveState();
+
+            if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+            if(document.getElementById('page-market').classList.contains('active')) renderMarketGrid();
+            if(document.getElementById('page-detail').classList.contains('active') && selectedStockCode) renderDetailView(selectedStockCode);
+        }
+
+        function generateNews() {
+            const stock = state.stocks[Math.floor(Math.random() * state.stocks.length)];
+            const isPos = Math.random() > 0.5;
+            stock.price = Math.round(stock.price * (isPos ? 1.04 : 0.96));
+            const events = isPos ? ["の新技術が特許を取得。", "の決算が予想を上回る。", "が新事業を発表。"] : ["で生産遅延が発生。", "のコスト上昇が懸念。", "に業績悪化の噂。"];
+            const now = new Date();
+            const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+            newsList.unshift({ time: timeStr, title: `${stock.name} ${events[Math.floor(Math.random() * events.length)]}` });
+            if(newsList.length > 5) newsList.pop();
+        }
+
+        function openLifeAnnouncementDetail() {
+            const modal = document.getElementById('lifeAnnouncementDetail');
+            if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        }
+        function closeLifeAnnouncementDetail() {
+            const modal = document.getElementById('lifeAnnouncementDetail');
+            if (modal) { modal.style.display = 'none'; document.body.style.overflow = ''; }
+        }
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') { closeLifeAnnouncementDetail(); }
+        });
+
+        function navigateTo(pageId, element) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            if(element) {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                element.classList.add('active');
+            }
+            if(pageId === 'dashboard') renderDashboard();
+            if(pageId === 'market') renderMarketGrid();
+            if(pageId === 'ranking') renderHistory();
+        }
+
+        function renderDashboard() {
+            if(!state || typeof state !== 'object') state={cash:LIFE_INITIAL_CASH,portfolio:{},history:[],stocks:[],usedCoupons:[]};
+            if(!state.portfolio || typeof state.portfolio !== 'object') state.portfolio={};
+            if(!Array.isArray(state.stocks)) state.stocks=[];
+            if(!Array.isArray(state.history)) state.history=[];
+            if(!Array.isArray(newsList)) newsList=[];
+            let totalStockVal = 0;
+            const tbody = document.getElementById('portfolio-table-body');
+            tbody.innerHTML = '';
+
+            Object.keys(state.portfolio).forEach(code => {
+                const item = state.portfolio[code];
+                const stock = state.stocks.find(s => s.code === code);
+                if(stock && item.shares > 0) {
+                    const currentVal = stock.price * item.shares;
+                    const profit = currentVal - (item.avgPrice * item.shares);
+                    totalStockVal += currentVal;
+                    tbody.innerHTML += `<tr>
+                        <td><b>${stock.name}</b></td><td>${item.shares.toLocaleString()}</td>
+                        <td>¥${Math.round(item.avgPrice).toLocaleString()}</td><td>¥${stock.price.toLocaleString()}</td>
+                        <td>¥${currentVal.toLocaleString()}</td><td class="${profit>=0?'up':'down'}">${profit>=0?'+':''}¥${profit.toLocaleString()}</td>
+                        <td><button class="tab-btn" onclick="openDetail('${code}')">取引</button></td>
+                    </tr>`;
+                }
+            });
+            if(tbody.innerHTML === '') tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-sub);">保有銘柄なし</td></tr>';
+
+            const totalAssets = state.cash + totalStockVal;
+            const totalProfit = totalAssets - 1000000;
+            document.getElementById('total-assets').innerText = `¥${totalAssets.toLocaleString()}`;
+            document.getElementById('cash-balance').innerText = `¥${state.cash.toLocaleString()}`;
+            document.getElementById('total-profit').innerText = `${totalProfit>=0?'+':''}¥${totalProfit.toLocaleString()} (${((totalProfit/1000000)*100).toFixed(2)}%)`;
+            document.getElementById('total-profit').className = `asset-val ${totalProfit>=0?'up':'down'}`;
+
+            const newsContainer = document.getElementById('dashboard-news-list');
+            newsContainer.innerHTML = newsList.length === 0 ? '<p style="color:var(--text-sub); font-size:0.85rem;">ニュースなし</p>' : '';
+            newsList.forEach(n => newsContainer.innerHTML += `<div class="news-item"><div class="news-date">${n.time}</div><div class="news-title">${n.title}</div></div>`);
+        }
+
+        function applyCoupon() {
+            const inputEl = document.getElementById('coupon-input');
+            const code = inputEl ? inputEl.value.trim() : '';
+
+            if (!state.usedCoupons) state.usedCoupons = [];
+
+            if (code === 'kabu-134') {
+                if (state.usedCoupons.includes('kabu-134')) {
+                    alert('このクーポンコードは既に使用されています。');
+                    return;
+                }
+
+                const targetCode = '1002';
+                const qty = 10;
+                const stock = state.stocks.find(s => s.code === targetCode);
+
+                if (!stock) {
+                    alert('対象の銘柄が見つかりませんでした。');
+                    return;
+                }
+
+                if (!state.portfolio[targetCode]) {
+                    state.portfolio[targetCode] = { shares: 0, avgPrice: 0 };
+                }
+                const current = state.portfolio[targetCode];
+                const newTotalShares = current.shares + qty;
+                current.avgPrice = (current.shares * current.avgPrice) / newTotalShares;
+                current.shares = newTotalShares;
+
+                state.usedCoupons.push('kabu-134');
+                const now = new Date();
+                const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+                state.history.unshift({
+                    time: timeStr,
+                    type: '特典',
+                    name: stock.name,
+                    shares: qty,
+                    price: 0,
+                    total: 0
+                });
+
+                saveState();
+                renderDashboard();
+                alert(`🎉 クーポンが適用されました！\n${stock.name} を ${qty} 株獲得しました。`);
+                if (inputEl) inputEl.value = '';
+            } else {
+                alert('無効なクーポンコードです。');
+            }
+        }
+
+        function renderMarketGrid(filter = 'all') {
+            const grid = document.getElementById('market-grid');
+            if(!grid)return;
+            grid.innerHTML = '';
+            let list = Array.isArray(state.stocks) ? [...state.stocks] : [];
+            if(filter === 'gainers') list.sort((a,b) => (b.price - b.previousPrice)/b.previousPrice - (a.price - a.previousPrice)/a.previousPrice);
+            else if(filter === 'losers') list.sort((a,b) => (a.price - a.previousPrice)/a.previousPrice - (b.price - b.previousPrice)/b.previousPrice);
+
+            list.forEach(s => {
+                const change = s.price - s.previousPrice;
+                const changePercent = s.previousPrice ? ((change / s.previousPrice) * 100).toFixed(2) : "0.00";
+                grid.innerHTML += `<div class="stock-card" onclick="openDetail('${s.code}')">
+                    <div class="stock-header"><div><div class="stock-name">${s.name}</div><div class="stock-code">${s.code}</div></div></div>
+                    <div class="stock-price-box"><div class="stock-price">¥${s.price.toLocaleString()}</div>
+                    <div class="stock-change ${change>=0?'up':'down'}">${change>=0?'+':''}${change} (${change>=0?'+':''}${changePercent}%)</div></div>
+                </div>`;
+            });
+        }
+
+        function filterMarket(type, el) {
+            document.querySelectorAll('#page-market .tab-btn').forEach(b => b.classList.remove('active'));
+            if(el) el.classList.add('active');
+            renderMarketGrid(type);
+        }
+
+        function openDetail(code) {
+            selectedStockCode = code;
+            renderDetailView(code);
+            navigateTo('detail');
+        }
+
+        function renderDetailView(code) {
+            const stock = state.stocks.find(s => s.code === code);
+            if(!stock) return;
+            document.getElementById('detail-name').innerText = stock.name;
+            document.getElementById('detail-code').innerText = `${stock.code} | ${stock.sector}`;
+            document.getElementById('detail-price').innerText = `¥${stock.price.toLocaleString()}`;
+            
+            const change = stock.price - stock.previousPrice;
+            const changePercent = stock.previousPrice ? ((change / stock.previousPrice) * 100).toFixed(2) : "0.00";
+            const changeEl = document.getElementById('detail-change');
+            changeEl.innerText = `${change >= 0 ? '+' : ''}${change} (${change >= 0 ? '+' : ''}${changePercent}%)`;
+            changeEl.className = change >= 0 ? 'up' : 'down';
+
+            document.getElementById('detail-desc').innerText = stock.desc;
+            document.getElementById('detail-marketcap').innerText = `¥${(stock.price * 50).toLocaleString()} 億円`;
+            document.getElementById('detail-dividend').innerText = `${stock.div}%`;
+            document.getElementById('detail-per').innerText = `${stock.per} 倍`;
+            document.getElementById('detail-founded').innerText = `${stock.founded} 年`;
+            document.getElementById('detail-benefit').innerText = stock.benefit;
+
+            const holding = state.portfolio[code] ? state.portfolio[code].shares : 0;
+            document.getElementById('trade-holding-count').innerText = holding.toLocaleString();
+
+            calculateTradeCost();
+            renderChart(stock);
+        }
+
+        function switchChartType(type) {
+            currentChartType = type;
+            document.getElementById('btn-chart-candlestick').classList.toggle('active', type === 'candlestick');
+            document.getElementById('btn-chart-line').classList.toggle('active', type === 'line');
+            if (selectedStockCode) {
+                const stock = state.stocks.find(s => s.code === selectedStockCode);
+                if (stock) renderChart(stock);
+            }
+        }
+
+        function renderChart(stock) {
+            const canvas = document.getElementById('stockChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (mainChart) { mainChart.destroy(); mainChart = null; }
+            const history = Array.isArray(stock.ohlcHistory) ? stock.ohlcHistory : [];
+            if (!window.Chart || history.length === 0) {
+                const parent = canvas.parentElement;
+                if (parent) {
+                    let note = parent.querySelector('.chart-fallback-note');
+                    if (!note) { note = document.createElement('p'); note.className = 'chart-fallback-note'; parent.appendChild(note); }
+                    note.textContent = 'チャートデータを準備しています。しばらくしてから再読み込みしてください。';
+                }
+                return;
+            }
+            const fallbackNote = canvas.parentElement?.querySelector('.chart-fallback-note');
+            if (fallbackNote) fallbackNote.remove();
+
+            let hasCandlestick = false;
+            try { window.Chart.registry.getController('candlestick'); hasCandlestick = true; } catch (e) { hasCandlestick = false; }
+            if (currentChartType === 'candlestick' && hasCandlestick) {
+                mainChart = new Chart(ctx, {
+                    type: 'candlestick',
+                    data: {
+                        datasets: [{
+                            label: stock.name,
+                            data: stock.ohlcHistory
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'time', time: { unit: 'minute' } }
+                        }
+                    }
+                });
+            } else {
+                mainChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.map(d => (window.luxon?.DateTime ? luxon.DateTime.fromMillis(d.x).toFormat('HH:mm:ss') : new Date(d.x).toLocaleTimeString('ja-JP'))),
+                        datasets: [{
+                            label: stock.name,
+                            data: history.map(d => Number(d.c ?? d.close ?? stock.price)),
+                            borderColor: '#2962ff',
+                            tension: 0.1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+
+        function calculateTradeCost() {
+            if (!selectedStockCode) return;
+            const stock = state.stocks.find(s => s.code === selectedStockCode);
+            const qtyInput = document.getElementById('trade-quantity');
+            const qty = parseInt(qtyInput.value, 10) || 0;
+            const total = stock ? stock.price * qty : 0;
+            document.getElementById('trade-total-cost').innerText = `¥${total.toLocaleString()}`;
+        }
+
+        function executeTrade(type) {
+            if (!isMarketOpen) {
+                alert("現在取引時間外です。");
+                return;
+            }
+
+            const stock = state.stocks.find(s => s.code === selectedStockCode);
+            if (!stock) return;
+
+            const qty = parseInt(document.getElementById('trade-quantity').value, 10);
+            if (isNaN(qty) || qty <= 0) {
+                alert("正しい株数を入力してください。");
+                return;
+            }
+
+            const totalCost = stock.price * qty;
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            let action = '';
+
+            if (type === 'buy') {
+                if (state.cash < totalCost) {
+                    alert("現金残高が不足しています。");
+                    return;
+                }
+
+                state.cash -= totalCost;
+
+                if (!state.portfolio[stock.code]) {
+                    state.portfolio[stock.code] = { shares: 0, avgPrice: 0 };
+                }
+
+                const current = state.portfolio[stock.code];
+                const totalShares = current.shares + qty;
+                current.avgPrice = ((current.shares * current.avgPrice) + totalCost) / totalShares;
+                current.shares = totalShares;
+
+                action = '買う';
+                state.history.unshift({
+                    time: timeStr,
+                    type: '買付',
+                    name: stock.name,
+                    shares: qty,
+                    price: stock.price,
+                    total: totalCost
+                });
+
+                alert(`${stock.name} を ${qty} 株買付しました。`);
+
+            } else if (type === 'sell') {
+                const current = state.portfolio[stock.code];
+
+                if (!current || current.shares < qty) {
+                    alert("保有株数が不足しています。");
+                    return;
+                }
+
+                state.cash += totalCost;
+                current.shares -= qty;
+                if (current.shares === 0) delete state.portfolio[stock.code];
+
+                action = '売る';
+                state.history.unshift({
+                    time: timeStr,
+                    type: '売却',
+                    name: stock.name,
+                    shares: qty,
+                    price: stock.price,
+                    total: totalCost
+                });
+
+                alert(`${stock.name} を ${qty} 株売却しました。`);
+            }
+
+            saveState();
+            renderDetailView(stock.code);
+
+            // Googleフォームへ「今回の取引1件だけ」を送信。
+            // A列のタイムスタンプはフォーム側で自動生成される。
+            sendTradeRecord({
+                identifier: getTradeIdentifier(),
+                action: action,
+                shares: qty,
+                stock: stock.name,
+                stockCode: stock.code,
+                balance: state.cash,
+                price: stock.price,
+                total: totalCost
+            });
+        }
+
+        function sendTradeRecord(record) {
+            try {
+                const form = document.getElementById('tradeRecordForm');
+                const identifierInput = document.getElementById('tradeRecordIdentifier');
+                const dataInput = document.getElementById('tradeRecordData');
+                if (!form || !identifierInput || !dataInput) return;
+
+                const identifier = String(record.identifier || getTradeIdentifier());
+
+                // 1回の取引につき「今回の取引」と「その直後の完全なstate」を保存。
+                // これにより、GAS側は最新行だけからも復旧ファイルを生成できます。
+                const data = {
+                    version: '26.1',
+                    identifier: identifier,
+                    savedAt: new Date().toISOString(),
+                    transaction: {
+                        action: String(record.action || ''),
+                        stock: String(record.stock || ''),
+                        stockCode: String(record.stockCode || ''),
+                        shares: Number(record.shares || 0),
+                        price: Number(record.price || 0),
+                        total: Number(record.total || 0),
+                        balance: Number(record.balance || state.cash || 0),
+                        time: String(record.time || new Date().toISOString())
+                    },
+                    state: JSON.parse(JSON.stringify(state))
+                };
+
+                identifierInput.value = identifier;
+                dataInput.value = JSON.stringify(data);
+
+                // Googleフォーム側のA列タイムスタンプは自動記録。
+                /* TEST ONLY: Googleフォーム送信を無効化 */
+
+                console.log('完全復旧用の取引データをGoogleフォームへ保存しました。');
+            } catch (error) {
+                console.warn('取引履歴のGoogleフォーム送信に失敗しました:', error);
+            }
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            if (state.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-sub);">取引履歴はありません</td></tr>';
+                return;
+            }
+            state.history.forEach(h => {
+                tbody.innerHTML += `<tr>
+                    <td>${h.time}</td>
+                    <td style="color:${h.type === '買付' ? 'var(--accent-green)' : (h.type === '特典' ? 'var(--accent-gold)' : 'var(--accent-red)')}">${h.type}</td>
+                    <td><b>${h.name}</b></td>
+                    <td>${h.shares.toLocaleString()}</td>
+                    <td>¥${h.price.toLocaleString()}</td>
+                    <td>¥${h.total.toLocaleString()}</td>
+                </tr>`;
+            });
+        }
+
+
+
+        // ===== アクセス情報の記録 =====
+        function getAccessDevice() {
+            const ua = navigator.userAgent.toLowerCase();
+            if (/ipad|tablet/.test(ua)) return 'タブレット';
+            if (/mobi|iphone|ipod|android/.test(ua)) return 'スマートフォン';
+            return 'PC';
+        }
+
+        function getAccessOS() {
+            const ua = navigator.userAgent;
+            if (/windows nt/i.test(ua)) return 'Windows';
+            if (/android/i.test(ua)) return 'Android';
+            if (/iphone|ipad|ipod/i.test(ua)) return 'iOS / iPadOS';
+            if (/mac os x/i.test(ua)) return 'macOS';
+            if (/cros/i.test(ua)) return 'ChromeOS';
+            if (/linux/i.test(ua)) return 'Linux';
+            return 'その他';
+        }
+
+        function getAccessBrowser() {
+            const ua = navigator.userAgent;
+            if (/edg\//i.test(ua)) return 'Microsoft Edge';
+            if (/opr\//i.test(ua) || /opera/i.test(ua)) return 'Opera';
+            if (/chrome\//i.test(ua) && !/edg\//i.test(ua)) return 'Google Chrome';
+            if (/firefox\//i.test(ua)) return 'Mozilla Firefox';
+            if (/safari\//i.test(ua) && !/chrome\//i.test(ua)) return 'Safari';
+            return 'その他';
+        }
+
+        function recordAccessInfo() {
+            try {
+                const form = document.getElementById('accessRecordForm');
+                if (!form) return;
+
+                const now = new Date();
+                const accessDate = now.getFullYear() + '/' +
+                    String(now.getMonth() + 1).padStart(2, '0') + '/' +
+                    String(now.getDate()).padStart(2, '0') + ' ' +
+                    String(now.getHours()).padStart(2, '0') + ':' +
+                    String(now.getMinutes()).padStart(2, '0') + ':' +
+                    String(now.getSeconds()).padStart(2, '0');
+
+                document.getElementById('accessRecordDate').value = accessDate;
+                document.getElementById('accessRecordUrl').value = location.href;
+                document.getElementById('accessRecordTitle').value = document.title;
+                document.getElementById('accessRecordDevice').value = getAccessDevice();
+                document.getElementById('accessRecordOS').value = getAccessOS();
+                document.getElementById('accessRecordBrowser').value = getAccessBrowser();
+
+                /* TEST ONLY: Googleフォーム送信を無効化 */
+            } catch (e) {
+                console.warn('アクセス情報の記録に失敗しました:', e);
+            }
+        }
+
+        function initAccessRecordNotice() {
+            const notice = document.getElementById('accessRecordNotice');
+            const okButton = document.getElementById('accessRecordOk');
+            const storageKey = 'bainari_access_record_notice_closed';
+
+            recordAccessInfo();
+
+            if (!notice || !okButton) return;
+            if (sessionStorage.getItem(storageKey) === '1') return;
+
+            notice.style.display = 'flex';
+            okButton.addEventListener('click', function () {
+                sessionStorage.setItem(storageKey, '1');
+                notice.style.display = 'none';
+            });
+        }
+
+
+
+        /* ==========================================
+           取引履歴バックアップ / 識別子 / 復旧依頼
+        ========================================== */
+        const TRADE_IDENTIFIER_KEY = 'tradePro_identifier_v1';
+        const TRADE_BACKUP_VERSION = '26.1';
+
+        // 復旧依頼用GoogleフォームのURLをここに設定してください。
+        const RECOVERY_FORM_URL = 'https://forms.gle/9JESWuBCDoH39ehD8';
+
+        function createTradeIdentifier(){
+            const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result='BAI-';
+            const bytes=new Uint8Array(10);
+            if(window.crypto && crypto.getRandomValues){crypto.getRandomValues(bytes);for(let i=0;i<bytes.length;i++)result+=chars[bytes[i]%chars.length];}
+            else{for(let i=0;i<10;i++)result+=chars[Math.floor(Math.random()*chars.length)];}
+            return result;
+        }
+        function getTradeIdentifier(){
+            let id=localStorage.getItem(TRADE_IDENTIFIER_KEY);
+            if(!id){id=createTradeIdentifier();localStorage.setItem(TRADE_IDENTIFIER_KEY,id);}
+            return id;
+        }
+        function initTradeIdentifier(){
+            const id=getTradeIdentifier();
+            const el=document.getElementById('tradeIdentifier');
+            const welcomeEl=document.getElementById('welcomeTradeIdentifier');
+            if(el)el.textContent=id;
+            if(welcomeEl)welcomeEl.textContent=id;
+
+            const welcome=document.getElementById('identifierWelcome');
+            if(welcome && localStorage.getItem('tradePro_identifier_welcome_seen')!=='1'){
+                welcome.style.display='flex';
+            }
+        }
+        function copyTradeIdentifier(){
+            const id=getTradeIdentifier();
+            if(navigator.clipboard && navigator.clipboard.writeText){
+                navigator.clipboard.writeText(id).then(()=>{
+                    const s=document.getElementById('identifierSaveStatus');
+                    if(s)s.textContent='📋 コピーしました';
+                }).catch(()=>fallbackCopyIdentifier(id));
+            }else fallbackCopyIdentifier(id);
+        }
+        function fallbackCopyIdentifier(id){
+            const ta=document.createElement('textarea');ta.value=id;document.body.appendChild(ta);ta.select();
+            try{document.execCommand('copy');const s=document.getElementById('identifierSaveStatus');if(s)s.textContent='📋 コピーしました';}catch(e){}
+            ta.remove();
+        }
+        function saveIdentifierText(){
+            const id=getTradeIdentifier();
+            const blob=new Blob(['株シミュレーターLIFE 識別子\n\n'+id+'\n\nこの識別子は取引履歴の保存・復旧に使用します。'],{type:'text/plain;charset=utf-8'});
+            const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='株シミュレーターLIFE_識別子.txt';document.body.appendChild(a);a.click();a.remove();
+            setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+            const s=document.getElementById('identifierSaveStatus');if(s)s.textContent='💾 保存しました';
+        }
+        function closeIdentifierWelcome(){
+            localStorage.setItem('tradePro_identifier_welcome_seen','1');
+            const welcome=document.getElementById('identifierWelcome');if(welcome)welcome.style.display='none';
+        }
+        function calculateTotalAssetsForBackup(){
+            let stockValue=0;
+            if(state && state.portfolio && Array.isArray(state.stocks)){
+                Object.keys(state.portfolio).forEach(code=>{
+                    const h=state.portfolio[code],stock=state.stocks.find(x=>x.code===code);
+                    if(h&&stock&&Number(h.shares)>0)stockValue+=Number(stock.price||0)*Number(h.shares||0);
+                });
+            }
+            return Number(state.cash||0)+stockValue;
+        }
+        function safeBackupJson(value){try{return JSON.stringify(value);}catch(e){return '[]';}}
+        function backupTradeHistory(){
+            alert('取引履歴は、買う・売る操作を行った時点で1件ずつ自動保存されます。\n\n過去の履歴を再送信する機能は、重複登録を防ぐため無効にしています。');
+        }
+
+        function openRecoveryRequest(){
+            const id=getTradeIdentifier();
+            if(!RECOVERY_FORM_URL){alert('復旧依頼フォームのURLがまだ設定されていません。\n\n現在の識別子：'+id);return;}
+            try{
+                const url=new URL(RECOVERY_FORM_URL);
+                url.searchParams.set('usp','pp_url');
+                // 復旧フォーム側の識別子entryが判明したら、次の形式で自動入力できます。
+                // url.searchParams.set('entry.123456789',id);
+                window.open(url.toString(),'_blank','noopener,noreferrer');
+            }catch(e){alert('復旧依頼フォームのURL設定を確認してください。');}
+        }
+
+        /* =========================================================
+           LIFE ONLINE EDITION
+           GitHub Pages frontend + Google Apps Script JSONP API
+        ========================================================= */
+        const LIFE_API_URL = ''; // TEST ONLY: 本番GASへ接続しない
+        const LIFE_PROFILE_KEY = 'life_online_profile_v1';
+        const LIFE_TERMS_VERSION = '2026-11-17-3';
+        const LIFE_PRIVACY_VERSION = '2026-11-17-2';
+        const LIFE_INITIAL_CASH = 1000000;
+        let lifeProfile = null;
+        let lifePollTimer = null;
+        let lifeRequestCounter = 0;
+        let lifeRefreshInFlight = false;
+
+        function lifeRandomToken(){
+            const a=new Uint8Array(24);crypto.getRandomValues(a);
+            return Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('');
+        }
+        function lifeNewPlayerId(){
+            const a=new Uint8Array(8);crypto.getRandomValues(a);
+            return 'LIFE-'+Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();
+        }
+        function lifeGetProfile(){
+            try{return JSON.parse(localStorage.getItem(LIFE_PROFILE_KEY)||'null')}catch(e){return null}
+        }
+        function lifeHasValidConsent(p){
+            const validAgeCategory=p && (p.ageCategory === 'adult' || p.ageCategory === 'minor');
+            const guardianValid=p && (p.ageCategory === 'adult'
+                ? p.guardianConsentRequired === false
+                : p.ageCategory === 'minor' && p.guardianConsentRequired === true && p.guardianConsentConfirmed === true);
+            return !!(p && validAgeCategory && p.ageStatusVersion === '2026-11-17-1' &&
+                p.ageConfirmed === true && guardianValid &&
+                p.termsAccepted === true && p.privacyAccepted === true &&
+                p.termsVersion === LIFE_TERMS_VERSION && p.privacyVersion === LIFE_PRIVACY_VERSION &&
+                typeof p.consentAt === 'string' && p.consentAt.length > 0);
+        }
+        function lifeSaveProfile(p){
+            const serialized=JSON.stringify(p);
+            localStorage.setItem(LIFE_PROFILE_KEY,serialized);
+            if(localStorage.getItem(LIFE_PROFILE_KEY)!==serialized) throw new Error('同意情報を端末に保存できませんでした。ブラウザの保存設定を確認してください。');
+            lifeProfile=p;
+        }
+        function lifeApi(action, params={}){
+            return new Promise((resolve,reject)=>{
+                if(!LIFE_API_URL || LIFE_API_URL.includes('PASTE_YOUR')){reject(new Error('GASのウェブアプリURLが設定されていません。index.html内のLIFE_API_URLを設定してください。'));return;}
+                const callback='lifeJsonp_'+(++lifeRequestCounter)+'_'+Date.now();
+                const script=document.createElement('script');
+                // タイムアウトは設けず、サーバーから応答が届くまで待機する
+                function cleanup(){try{delete window[callback]}catch(e){}script.remove();}
+                window[callback]=(result)=>{cleanup();if(result&&result.ok===true)resolve(result);else reject(new Error(result&&result.error?String(result.error):'サーバー処理に失敗しました。'));};
+                const query=new URLSearchParams({action,callback,...Object.fromEntries(Object.entries(params).map(([k,v])=>[k,typeof v==='string'?v:JSON.stringify(v)]))});
+                script.onerror=()=>{cleanup();reject(new Error('GAS APIに接続できません。公開設定とURLを確認してください。'));};
+                const endpoint=new URL(LIFE_API_URL);query.forEach((v,k)=>endpoint.searchParams.set(k,v));script.src=endpoint.toString();document.head.appendChild(script);
+            });
+        }
+        function lifeSetStatus(message){const el=document.getElementById('onlineStatus');if(el)el.textContent=message;}
+        function getTradeIdentifier(){return lifeProfile?lifeProfile.playerId:(lifeGetProfile()?.playerId||'未登録');}
+        function initTradeIdentifier(){
+            const id=getTradeIdentifier();
+            ['tradeIdentifier','welcomeTradeIdentifier'].forEach(x=>{const el=document.getElementById(x);if(el)el.textContent=id;});
+            const welcome=document.getElementById('identifierWelcome');if(welcome)welcome.style.display='none';
+        }
+        function copyTradeIdentifier(){const id=getTradeIdentifier();navigator.clipboard?.writeText(id).then(()=>{const e=document.getElementById('identifierSaveStatus');if(e)e.textContent='コピーしました';}).catch(()=>alert('利用者ID：'+id));}
+        function saveIdentifierText(){const id=getTradeIdentifier();const b=new Blob(['株シミュレーターLIFE 利用者ID\n'+id+'\n\nこのIDとブラウザ保存データを大切に保管してください。'],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='LIFE_player_ID.txt';a.click();URL.revokeObjectURL(a.href);}
+        function closeIdentifierWelcome(){const e=document.getElementById('identifierWelcome');if(e)e.style.display='none';}
+
+        function lifeAgeCategoryChanged(){
+            const selected=document.querySelector('input[name="lifeAgeCategory"]:checked')?.value||'';
+            const entry=document.getElementById('lifeGuardianEntry');
+            const guardian=document.getElementById('lifeGuardianConfirm');
+            const status=document.getElementById('lifeGuardianEntryStatus');
+            if(entry)entry.style.display=selected==='minor'?'grid':'none';
+            if(selected==='adult'){
+                if(guardian)guardian.checked=false;
+                if(status)status.textContent='18歳以上のため、法定代理人の同意確認は不要です。';
+            }else if(selected==='minor'){
+                if(guardian)guardian.checked=false;
+                if(status)status.textContent='法定代理人（親権者または未成年後見人）の同意確認が必要です。';
+            }else if(guardian){guardian.checked=false;}
+        }
+
+        function lifeOpenGuardianScreen(){
+            const screen=document.getElementById('lifeGuardianScreen');
+            const check=document.getElementById('lifeGuardianScreenCheck');
+            if(check)check.checked=false;
+            lifeGuardianScreenCheckChanged();
+            if(screen){screen.style.display='block';document.body.style.overflow='hidden';screen.scrollTop=0;}
+        }
+        function lifeGuardianScreenCheckChanged(){
+            const checked=document.getElementById('lifeGuardianScreenCheck')?.checked===true;
+            const accept=document.getElementById('lifeGuardianScreenAccept');
+            if(accept)accept.disabled=!checked;
+        }
+        function lifeCloseGuardianScreen(){
+            const screen=document.getElementById('lifeGuardianScreen');
+            if(screen)screen.style.display='none';
+            document.body.style.overflow='';
+        }
+        function lifeConfirmGuardianConsent(){
+            if(document.getElementById('lifeGuardianScreenCheck')?.checked!==true)return;
+            const original=document.getElementById('lifeGuardianConfirm');
+            if(original)original.checked=true;
+            const status=document.getElementById('lifeGuardianEntryStatus');
+            if(status)status.textContent='法定代理人本人による同意確認済み';
+            lifeCloseGuardianScreen();
+        }
+
+        async function registerOnlinePlayer(){
+            const ageCategory=document.querySelector('input[name="lifeAgeCategory"]:checked')?.value||'';
+            const ageConfirmed=ageCategory==='adult'||ageCategory==='minor';
+            const guardianConfirmed=document.getElementById('lifeGuardianConfirm')?.checked===true;
+            const guardianRequired=ageCategory==='minor';
+            const termsAccepted=document.getElementById('lifeTermsConfirm')?.checked===true;
+            const privacyAccepted=document.getElementById('lifePrivacyConfirm')?.checked===true;
+            if(!ageConfirmed){lifeSetStatus('18歳以上か、13歳以上18歳未満かを選択してください。');return;}
+            if(guardianRequired&&!guardianConfirmed){lifeSetStatus('18歳未満の場合は、親権者または未成年後見人などの法定代理人の同意確認が必要です。');return;}
+            if(!termsAccepted||!privacyAccepted){lifeSetStatus('利用規約とプライバシーポリシーの両方への同意が必要です。');return;}
+            const name=(document.getElementById('playerNameInput')?.value||'').trim();
+            if(name.length<1||name.length>16){lifeSetStatus('利用者名は1〜16文字で入力してください。');return;}
+            const btn=document.getElementById('playerRegisterButton');if(btn)btn.disabled=true;
+            lifeSetStatus('同意情報を保存しています...');
+            const consentAt=new Date().toISOString();
+            const profile={
+                playerId:lifeNewPlayerId(),token:lifeRandomToken(),name,createdAt:consentAt,
+                ageConfirmed:true,ageCategory,ageStatusVersion:'2026-11-17-1',
+                guardianConsentRequired:guardianRequired,
+                guardianConsentConfirmed:guardianRequired?guardianConfirmed:false,
+                termsAccepted:true,privacyAccepted:true,
+                termsVersion:LIFE_TERMS_VERSION,privacyVersion:LIFE_PRIVACY_VERSION,
+                consentAt
+            };
+            try{
+                // サーバー登録前に、同意情報を端末へ確実に保存できるか確認する。
+                lifeSaveProfile(profile);
+                lifeSetStatus('利用者情報を登録しています...');
+                const result=await lifeApi('register',{playerId:profile.playerId,token:profile.token,name:profile.name});
+                document.getElementById('playerRegistration').style.display='none';
+                applyOnlineSnapshot(result.snapshot);startLifePolling();initTradeIdentifier();
+                renderDashboard();renderMarketGrid();
+                alert('登録が完了しました。利用者ID：'+profile.playerId+'\\nIDは復旧用に保存してください。');
+            }catch(e){
+                lifeProfile=null;
+                try{localStorage.removeItem(LIFE_PROFILE_KEY);}catch(storageError){}
+                lifeSetStatus(e.message||'登録または同意情報の保存に失敗しました。');
+                if(btn)btn.disabled=false;
+            }
+        }
+        function normalizeOnlineSnapshot(snapshot){
+            if(!snapshot || typeof snapshot !== 'object') throw new Error('サーバーからのデータ形式が正しくありません。');
+            const stocks = Array.isArray(snapshot.stocks) ? snapshot.stocks : [];
+            const portfolio = snapshot.portfolio && typeof snapshot.portfolio === 'object' && !Array.isArray(snapshot.portfolio) ? snapshot.portfolio : {};
+            const history = Array.isArray(snapshot.history) ? snapshot.history : [];
+            const news = Array.isArray(snapshot.news) ? snapshot.news : [];
+            return {
+                cash: Number.isFinite(Number(snapshot.cash)) ? Number(snapshot.cash) : LIFE_INITIAL_CASH,
+                portfolio, history,
+                stocks: stocks.map(s => ({
+                    ...s,
+                    code: String(s.code || ''),
+                    name: String(s.name || '名称未設定'),
+                    sector: String(s.sector || 'その他'),
+                    price: Number(s.price || 0),
+                    previousPrice: Number(s.previousPrice ?? s.price ?? 0),
+                    marketSupply: Number(s.marketSupply ?? s.supply ?? 0),
+                    per: Number(s.per || 0), div: Number(s.div || 0),
+                    founded: Number(s.founded || 0),
+                    benefit: String(s.benefit || ''),
+                    desc: String(s.desc || s.description || ''),
+                    ohlcHistory: Array.isArray(s.ohlcHistory) ? s.ohlcHistory : []
+                })),
+                news
+            };
+        }
+        function applyOnlineSnapshot(snapshot){
+            const data = normalizeOnlineSnapshot(snapshot);
+            state = {
+                ...state,
+                cash: data.cash,
+                portfolio: data.portfolio,
+                history: data.history,
+                stocks: data.stocks,
+                usedCoupons: Array.isArray(state.usedCoupons) ? state.usedCoupons : []
+            };
+            newsList = data.news;
+            saveState();
+            const id=getTradeIdentifier();
+            ['tradeIdentifier','welcomeTradeIdentifier'].forEach(key=>{const el=document.getElementById(key);if(el)el.textContent=id;});
+        }
+        async function refreshOnlineSnapshot(){
+            if(!lifeProfile || lifeRefreshInFlight)return false;
+            lifeRefreshInFlight=true;
+            try{
+                const r=await lifeApi('snapshot',{playerId:lifeProfile.playerId,token:lifeProfile.token});
+                if(!r || !r.snapshot) throw new Error('口座データが応答に含まれていません。');
+                // 旧データや未初期化口座でsnapshot.stocksが空でも、市場APIから補完する
+                if(!Array.isArray(r.snapshot.stocks) || r.snapshot.stocks.length===0){
+                    const market=await lifeApi('market');
+                    r.snapshot.stocks=Array.isArray(market.stocks)?market.stocks:[];
+                    if(Array.isArray(market.news))r.snapshot.news=market.news;
+                }
+                applyOnlineSnapshot(r.snapshot);
+                if(document.getElementById('page-dashboard')?.classList.contains('active'))renderDashboard();
+                if(document.getElementById('page-market')?.classList.contains('active'))renderMarketGrid();
+                if(document.getElementById('page-detail')?.classList.contains('active')&&selectedStockCode)renderDetailView(selectedStockCode);
+                lifeSetStatus(state.stocks.length ? 'オンライン接続中・データ同期済み' : '接続済み・銘柄データがありません');
+                return true;
+            }catch(e){
+                console.warn('LIFE online refresh:',e.message);
+                lifeSetStatus('同期できませんでした：'+e.message);
+                return false;
+            }finally{
+                lifeRefreshInFlight=false;
+            }
+        }
+        async function refreshPublicMarket(){
+            if(lifeProfile || lifeRefreshInFlight)return false;
+            lifeRefreshInFlight=true;
+            try{
+                const data=await lifeApi('market');
+                state.stocks=Array.isArray(data.stocks)?data.stocks:[];
+                newsList=Array.isArray(data.news)?data.news:[];
+                renderDashboard();renderMarketGrid();
+                lifeSetStatus(state.stocks.length ? '市場データを同期しました' : '接続済み・銘柄データがありません');
+                return true;
+            }catch(e){
+                lifeSetStatus('銘柄情報を取得できません：'+e.message);
+                return false;
+            }finally{
+                lifeRefreshInFlight=false;
+            }
+        }
+        function startPublicMarketPolling(){
+            if(lifePollTimer)clearInterval(lifePollTimer);
+            refreshPublicMarket();
+            lifePollTimer=setInterval(refreshPublicMarket,5000);
+        }
+        function startLifePolling(){
+            if(lifePollTimer)clearInterval(lifePollTimer);
+            refreshOnlineSnapshot().then(ok=>{
+                if(ok){renderDashboard();renderMarketGrid();renderHistory();}
+            });
+            lifePollTimer=setInterval(refreshOnlineSnapshot,5000);
+        }
+        initApp=function(){
+            lifeProfile=lifeGetProfile();
+            if(!lifeHasValidConsent(lifeProfile)){
+                lifeProfile=null;
+                try{localStorage.removeItem(LIFE_PROFILE_KEY);}catch(e){}
+            }
+            state={cash:LIFE_INITIAL_CASH,portfolio:{},history:[],stocks:[],usedCoupons:[]};
+            newsList=[];
+            runEnvironmentCheck();
+            updateMarketTimeAndStatus();
+            setInterval(updateMarketTimeAndStatus,1000);
+            if(!lifeProfile){
+                document.getElementById('playerRegistration').style.display='flex';
+                // 登録前も公開市場データを5秒ごとに同期する。
+                startPublicMarketPolling();
+                return;
+            }
+            document.getElementById('playerRegistration').style.display='none';
+            initTradeIdentifier();
+            startLifePolling();
+        };
+        simulateMarketPriceChanges=function(){ /* 株価はGAS側で一括更新。ブラウザ側では変動させない */ };
+        executeTrade=async function(type){
+            if(!lifeProfile){alert('先に利用者登録をしてください。');return;}
+            if(!isMarketOpen){alert('現在は取引時間外です。');return;}
+            const stock=state.stocks.find(x=>x.code===selectedStockCode);if(!stock)return;
+            const qty=Number.parseInt(document.getElementById('trade-quantity').value,10);
+            if(!Number.isInteger(qty)||qty<=0){alert('正しい株数を入力してください。');return;}
+            const btn=document.getElementById(type==='buy'?'buy-btn':'sell-btn');if(btn)btn.disabled=true;
+            try{
+                const r=await lifeApi('trade',{playerId:lifeProfile.playerId,token:lifeProfile.token,type,stockCode:stock.code,quantity:qty});
+                applyOnlineSnapshot(r.snapshot);renderDashboard();renderDetailView(stock.code);renderHistory();
+                alert(r.message||'取引が完了しました。');
+            }catch(e){alert('取引できませんでした。\n'+e.message);await refreshOnlineSnapshot();}
+            finally{if(btn)btn.disabled=false;}
+        };
+        loadOnlineRanking=async function(){
+            const body=document.getElementById('onlineRankingBody');if(!body)return;
+            const tableWrap=body.closest('.ranking-table-wrap');
+            if(tableWrap)tableWrap.classList.remove('ranking-error');
+            const period=document.getElementById('rankingPeriod')?.value||'monthly';
+            const metric=document.getElementById('rankingMetric')?.value||'assets';
+            body.innerHTML='<tr><td colspan="6" style="text-align:center">読み込み中...</td></tr>';
+            try{
+                const r=await lifeApi('rankings',{period,metric,playerId:lifeProfile?.playerId||''});
+                document.getElementById('rankingSeasonLabel').textContent=r.periodLabel||'';
+                body.innerHTML='';
+                const rows=Array.isArray(r.rows)?r.rows:[];
+                if(rows.length===0){body.innerHTML='<tr><td colspan="6" style="text-align:center">まだランキングデータがありません。</td></tr>';return;}
+                rows.forEach((x,i)=>{
+                    const tr=document.createElement('tr');if(x.playerId===lifeProfile?.playerId)tr.className='ranking-me';
+                    const displayName=String(x.name||'利用者'); // 仮想利用者も通常利用者と同じ表示
+                    const vals=[String(i+1)+'位',displayName, '¥'+Number(x.totalAssets).toLocaleString(),Number(x.profitRate).toFixed(2)+'%',(x.cumulativeProfit>=0?'+':'')+'¥'+Number(x.cumulativeProfit).toLocaleString(),Number(x.overallScore).toFixed(2)];
+                    vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});body.appendChild(tr);
+                });
+            }catch(e){
+                if(tableWrap)tableWrap.classList.add('ranking-error');
+                body.innerHTML='<tr><td class="ranking-error-cell" colspan="6">'+escapeHtml(e.message)+'</td></tr>';
+            }
+        };
+        const originalNavigateTo=navigateTo;
+        navigateTo=function(pageId,element){originalNavigateTo(pageId,element);if(pageId==='ranking')loadOnlineRanking();};
+        function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+        renderHistory=function(){
+            const tbody=document.getElementById('history-table-body');if(!tbody)return;tbody.innerHTML='';
+            if(!Array.isArray(state.history) || state.history.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-sub)">取引履歴はありません</td></tr>';return;}
+            state.history.forEach(h=>{const tr=document.createElement('tr');[h.time||'',h.type||'',h.name||'',Number(h.shares||0).toLocaleString(),'¥'+Number(h.price||0).toLocaleString(),'¥'+Number(h.total||0).toLocaleString()].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);});
+        };
+        // オンライン版ではサーバーが正本。旧ローカル専用機能による不整合を防止する。
+        applyCoupon=function(){alert('オンライン版ではクーポン機能を一時停止しています。');};
+        resetAllData=function(){alert('オンライン版の資産・保有株はサーバーで管理されています。このボタンからはリセットできません。');};
+        exportRecoveryFile=function(){
+            if(!lifeProfile){alert('利用者登録が必要です。');return;}
+            const data={fileType:'life-online-player-backup',version:1,profile:lifeProfile,exportedAt:new Date().toISOString()};
+            const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});
+            const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='株シミュレーターLIFE_利用者復旧用.json';a.click();URL.revokeObjectURL(url);
+            alert('復旧用ファイルを保存しました。このファイルには利用者認証キーが含まれます。他人に渡さないでください。');
+        };
+        importRecoveryFile=function(event){
+            const file=event.target.files&&event.target.files[0];if(!file)return;
+            const reader=new FileReader();reader.onload=async()=>{
+                try{const d=JSON.parse(reader.result);if(d.fileType!=='life-online-player-backup'||!d.profile?.playerId||!d.profile?.token)throw new Error('復旧ファイルの形式が違います。');
+                    const r=await lifeApi('snapshot',{playerId:d.profile.playerId,token:d.profile.token});
+                    lifeSaveProfile(d.profile);applyOnlineSnapshot(r.snapshot);document.getElementById('playerRegistration').style.display='none';startLifePolling();initTradeIdentifier();alert('利用者情報を復旧しました。');
+                }catch(e){alert('復旧できませんでした。'+e.message);}finally{event.target.value='';}
+            };reader.readAsText(file,'utf-8');
+        };
+        saveIdentifierText=exportRecoveryFile;
+        openRecoveryRequest=function(){alert('復旧には、登録時に保存した利用者復旧用JSONファイルを使用してください。利用者IDだけでは復旧できません。');};
+
+        const originalInitAppForBackup=initApp;
+
+        window.addEventListener('load', function () {
+            initApp();
+            initAccessRecordNotice();
+        });
+    </script>
+
+
+
+<div id="life-settings-modal" class="life-settings-overlay" aria-hidden="true" onclick="if(event.target===this)lifeCloseSettings()">
+ <section class="life-settings-window" role="dialog" aria-modal="true" aria-labelledby="life-settings-title">
+  <div class="life-settings-head"><h2 id="life-settings-title">⚙️ 設定</h2><button class="life-settings-close" type="button" onclick="lifeCloseSettings()" aria-label="閉じる">×</button></div>
+  <div class="life-settings-group"><h3>👤 アカウント・年齢確認</h3>
+   <div class="life-settings-row"><span>利用者名</span><span class="life-settings-value" id="life-settings-name">未登録</span></div>
+   <div class="life-settings-row"><span>年齢区分</span><span class="life-settings-value" id="life-settings-age">未確認</span></div>
+   <div class="life-settings-row"><span>法定代理人の同意</span><span class="life-settings-value" id="life-settings-guardian">未確認</span></div>
+   <div class="life-settings-row"><span>利用規約への同意</span><span class="life-settings-value" id="life-settings-terms">未確認</span></div>
+   <div class="life-settings-row"><span>プライバシーポリシーへの同意</span><span class="life-settings-value" id="life-settings-privacy">未確認</span></div>
+   <div class="life-settings-row"><span>同意日時</span><span class="life-settings-value" id="life-settings-date">—</span></div>
+   <p class="life-settings-note">同意状況はこの端末のブラウザに保存された情報を表示しています。</p>
+  </div>
+  <div class="life-settings-group"><h3>📄 規約・個人情報</h3>
+   <button class="life-settings-action" type="button" onclick="lifeCloseSettings();lifeOpenLegal('terms')">利用規約を確認する　›</button>
+   <button class="life-settings-action" type="button" onclick="lifeCloseSettings();lifeOpenLegal('privacy')">プライバシーポリシーを確認する　›</button>
+   <button class="life-settings-action" type="button" onclick="lifeShowConsentDetails()">同意内容を確認する　›</button>
+   <p class="life-settings-note">ここでは現在の同意状況を確認できます。確認してもログイン情報・同意情報・取引記録は変更または削除されません。</p>
+  </div>
+  <div class="life-settings-group"><h3>ℹ️ サービス情報</h3>
+   <div class="life-settings-row"><span>サービス名</span><span class="life-settings-value">株シミュレーターLIFEオンライン</span></div>
+   <div class="life-settings-row"><span>バージョン</span><span class="life-settings-value">α版</span></div>
+  </div>
+ </section>
+</div>
+
+
+<script>
+(function(){
+ window.lifeOpenSettings=function(){
+  const p=typeof lifeGetProfile==='function'?lifeGetProfile():null;
+  const valid=typeof lifeHasValidConsent==='function'&&lifeHasValidConsent(p);
+  const set=(id,value)=>{const e=document.getElementById(id);if(e)e.textContent=value;};
+  set('life-settings-name',p&&p.name?p.name:'未登録');
+  set('life-settings-age',p&&p.ageCategory==='adult'?'18歳以上':p&&p.ageCategory==='minor'?'13歳以上18歳未満':'未確認');
+  set('life-settings-guardian',p&&p.ageCategory==='adult'?'対象外（18歳以上）':p&&p.guardianConsentConfirmed===true?'同意確認済み':'未確認');
+  set('life-settings-terms',p&&p.termsAccepted===true?'同意済み':'未同意');
+  set('life-settings-privacy',p&&p.privacyAccepted===true?'同意済み':'未同意');
+  set('life-settings-date',p&&p.consentAt?new Date(p.consentAt).toLocaleString('ja-JP'):'—');
+  const modal=document.getElementById('life-settings-modal');modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+ };
+ window.lifeCloseSettings=function(){const m=document.getElementById('life-settings-modal');m.classList.remove('is-open');m.setAttribute('aria-hidden','true');document.body.style.overflow='';};
+ window.lifeShowConsentDetails=function(){
+  const p=typeof lifeGetProfile==='function'?lifeGetProfile():null;
+  if(!p){alert('利用者情報が見つかりません。登録画面で確認してください。');return;}
+  const age=p.ageCategory==='adult'?'18歳以上':p.ageCategory==='minor'?'13歳以上18歳未満':'未確認';
+  const guardian=p.ageCategory==='adult'?'対象外（18歳以上）':p.guardianConsentConfirmed===true?'同意確認済み':'未確認';
+  const terms=p.termsAccepted===true?'同意済み':'未同意';
+  const privacy=p.privacyAccepted===true?'同意済み':'未同意';
+  const date=p.consentAt?new Date(p.consentAt).toLocaleString('ja-JP'):'記録なし';
+  alert('【現在の確認内容】\n年齢区分：'+age+'\n法定代理人の同意：'+guardian+'\n利用規約：'+terms+'\nプライバシーポリシー：'+privacy+'\n確認日時：'+date+'\n\nこの確認によって、ログイン情報・同意情報・取引記録が変更または削除されることはありません。');
+ };
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')lifeCloseSettings();});
+})();
+</script>
+
+    <!-- 利用規約・プライバシーポリシー表示用 -->
+    <div id="life-legal-modal" class="life-legal-modal" aria-hidden="true">
+        <section class="life-legal-dialog" role="dialog" aria-modal="true" aria-labelledby="life-legal-title">
+            <button type="button" class="life-legal-close" onclick="lifeCloseLegal()" aria-label="閉じる">×</button>
+            <h2 id="life-legal-title">利用規約</h2>
+            <div id="life-legal-body" class="life-legal-body"></div>
+        </section>
+    </div>
+
+    <script>
+    (function(){
+        const lifeLegalDocuments={
+            terms:{title:'利用規約',html:`
+                <p><strong>制定・改定日：2026年11月17日</strong></p>
+                <p>この利用規約（以下「本規約」といいます。）は、株シミュレーターLIFEオンライン（以下「本サービス」といいます。）の利用条件を定めるものです。本サービスを利用する方（以下「利用者」といいます。）は、本規約の内容を確認し、同意したうえで利用してください。</p>
+
+                <h3>第1条（本サービスの目的と内容）</h3>
+                <p>1. 本サービスは、仮想の資金、株価、銘柄その他のシミュレーション用データを使用し、株式取引の仕組みや資産変動を体験・学習することを目的としたオンラインサービスです。</p>
+                <p>2. 本サービス上で行われる注文、売買、配当等の表示、資産計算およびランキングは、すべてシミュレーション上の処理です。実在する証券取引所への注文、実際の株式・金融商品・通貨の売買、資金の預かり、送金または決済は行いません。</p>
+                <p>3. 本サービスに表示される仮想資金、仮想資産、利益、損失、株価、銘柄情報、企業情報、配当、優待、ランキングおよびスコア等には、現実の金銭的価値、換金性または権利はありません。現金や商品等との交換、払い戻し、譲渡を請求することはできません。</p>
+                <p>4. 本サービスに登場する企業、銘柄、株価および企業情報には、シミュレーション用に作成された架空の情報が含まれます。実在する企業・銘柄・市場の情報と一致することを保証しません。</p>
+
+                <h3>第2条（投資助言ではないこと）</h3>
+                <p>1. 本サービスの表示内容は、学習・娯楽・シミュレーションを目的とするものであり、特定の金融商品や銘柄の購入・売却を勧誘または推奨するものではありません。</p>
+                <p>2. 本サービスの株価、チャート、企業情報、ランキング、利益率その他の数値を、実際の投資判断、金融商品の選択または資産運用の根拠として使用しないでください。</p>
+                <p>3. シミュレーション上の結果は、実際の市場における成果を示すものではなく、実際の取引結果や将来の利益を保証するものでもありません。</p>
+
+                <h3>第3条（利用対象・利用環境）</h3>
+                <p>1. 利用者は、自身が利用する端末、ブラウザおよび通信環境を用意し、自らの責任で本サービスを利用するものとします。</p>
+                <p>2. 本サービスを利用できるのは、利用開始時点で満13歳以上の方に限ります。13歳未満の方は、保護者の同意の有無にかかわらず、登録および利用できません。</p>
+                <p>3. 18歳未満の方は、登録および利用を開始する前に、法定代理人（親権者または未成年後見人）に本サービスの内容、本規約およびプライバシーポリシーを確認してもらい、利用について同意を得なければなりません。法定代理人の同意を得られない場合は利用できません。</p>
+                <p>4. 登録時には、13歳以上であること、および18歳未満の場合は法定代理人の同意を得ていることを、画面上のチェック欄で確認します。利用者は、法定代理人本人の意思を確認したうえでチェックしてください。虚偽の確認をしてはなりません。運営者が年齢要件または法定代理人の同意の確認に疑義があると判断した場合、追加確認、利用停止または登録抹消を行うことがあります。</p>
+                <p>5. 本サービスは、すべての端末、OS、ブラウザまたは通信環境での動作を保証するものではありません。端末やブラウザの設定、通信状況、外部サービスの仕様変更等により、一部機能が利用できない場合があります。</p>
+
+                <h3>第4条（利用者登録・表示名）</h3>
+                <p>1. 本サービスのオンライン機能を利用する場合、画面の案内に従って利用者登録を行う必要があります。登録時には、第3条に定める年齢および保護者同意の確認が必須です。</p>
+                <p>2. 利用者は、表示名その他の登録情報について、第三者の個人情報、他人になりすます情報、他人に不快感や誤解を与える情報、法令または公序良俗に反する情報を登録してはなりません。</p>
+                <p>3. 暴言、侮辱、差別的表現、脅迫、わいせつ・過度に下品な表現、嫌がらせを目的とする表現、宣伝・広告、他人や運営者になりすます名称、第三者の権利を侵害する名称その他運営者が不適切と判断する利用者名は禁止します。</p>
+                <p>4. 表示名はランキング等に表示される場合があります。氏名、住所、電話番号、学校名、メールアドレス、SNSアカウントその他の個人を特定できる情報を表示名に含めないでください。</p>
+                <p>5. 不適切な利用者名が確認された場合、運営者は、事前の通知なく、表示名の変更要請または変更、ランキング等での非表示、機能制限、アカウントの一時停止、登録抹消その他必要と判断する措置を講じることがあります。悪質性、繰り返しの違反、他の利用者への影響等を考慮して対応を決定します。</p>
+                <p>6. 利用者は、自身の利用者ID、認証情報および復旧用ファイルを適切に管理してください。これらを第三者に公開・共有したことによって生じた問題について、運営者は法令上認められる範囲で責任を負いません。</p>
+
+                <h3>第5条（利用者データと復旧用ファイル）</h3>
+                <p>1. 本サービスでは、オンライン機能の提供のため、利用者ID、認証に必要な情報、表示名、仮想資産、保有銘柄、取引履歴その他のデータをサーバー側で保存・処理します。</p>
+                <p>2. 利用者ID等の一部情報は、利用者のブラウザ内にも保存されます。ブラウザのデータ削除、端末の故障・変更、プライベートブラウズの利用、ブラウザ設定の変更等により、端末内の情報が失われる場合があります。</p>
+                <p>3. 本サービスの復旧用ファイルには、利用者を識別し、登録済みデータへのアクセスに使用される認証情報が含まれる場合があります。復旧用ファイルはパスワード等と同様に取り扱い、他人に送信したり、共有フォルダや公開サイトに置いたりしないでください。</p>
+                <p>4. 復旧用ファイルを紛失した場合、利用者IDだけでは復旧できないことがあります。運営者は、すべてのデータの復旧を保証しません。</p>
+
+                <h3>第6条（取引機能・利用回数の制限）</h3>
+                <p>1. 仮想株式の売買操作は、サーバー負荷の抑制および公平な利用環境の維持のため、1利用者につき5分間に最大30回までに制限されます。市場データの自動同期は、この取引操作回数には含まれません。</p>
+                <p>2. 取引可能時間や株価の更新条件は、サービス画面に表示される案内に従います。メンテナンス、障害、休日、外部サービスの状況等により、通常と異なる場合があります。</p>
+                <p>3. 制限を回避する目的で複数の利用者IDを作成・使用する行為、プログラム等によって取引を自動化する行為、サーバーに過度な負荷をかける行為は禁止します。</p>
+
+                <h3>第7条（ランキング・公開表示）</h3>
+                <p>1. ランキング機能では、利用者の表示名、総資産額、利益率、累計利益、スコア等の情報が他の利用者に表示される場合があります。</p>
+                <p>2. ランキングの順位や数値は、サーバーに保存されたデータおよび集計処理に基づくシミュレーション上の結果です。表示の遅延、集計の差異、障害等により、最新の状態と一致しない場合があります。</p>
+                <p>3. 利用者は、ランキングの表示内容を理由として、他の利用者に対する誹謗中傷、嫌がらせ、競争をあおる行為または個人情報の特定を試みる行為をしてはなりません。</p>
+
+                <h3>第8条（禁止事項）</h3>
+                <p>利用者は、次の行為を行ってはなりません。</p>
+                <ul>
+                    <li>本サービスのプログラム、画面、通信内容、データまたはランキングを不正に改変・操作する行為</li>
+                    <li>不正アクセス、認証回避、脆弱性の悪用、サーバーやデータベースへの不正な接続を試みる行為</li>
+                    <li>自動化ツール、スクリプト等を用いて、通常の利用を超えるアクセスや取引を行う行為</li>
+                    <li>他人の利用者ID、認証情報または復旧用ファイルを無断で使用する行為</li>
+                    <li>他の利用者、運営者または第三者の権利・利益・プライバシーを侵害する行為</li>
+                    <li>他人へのなりすまし、虚偽情報の登録、迷惑行為、嫌がらせ、脅迫または誹謗中傷</li>
+                    <li>本サービスや外部サービスに過度な負荷をかけ、運営・提供を妨げる行為</li>
+                    <li>本サービスを利用した営利目的の勧誘、広告、宣伝または営業活動（運営者が認めた場合を除く）</li>
+                    <li>法令、本規約または公序良俗に反する行為</li>
+                    <li>その他、運営者がサービスの安全・公平な運営に照らして不適切と判断する行為</li>
+                </ul>
+
+                <h3>第9条（利用の制限・登録情報への対応）</h3>
+                <p>利用者が本規約に違反した場合、または不正利用の疑いがある場合、運営者は事前の通知なく、必要な範囲で機能の制限、ランキング表示の停止、表示名の変更・非表示、データの修正・削除、アカウントの一時停止、登録抹消その他の措置を行うことがあります。特に不適切な利用者名については、第4条第5項に基づき対応します。</p>
+
+                <h3>第10条（サービス内容の変更・停止・終了）</h3>
+                <p>運営者は、保守、更新、障害対応、セキュリティ対策、外部サービスの仕様変更、運営上の都合その他必要がある場合、本サービスの全部または一部を変更、中断または終了することがあります。緊急の場合を除き、可能な範囲で事前に案内するよう努めますが、事前の告知を保証するものではありません。</p>
+
+                <h3>第11条（知的財産権）</h3>
+                <p>本サービスを構成するプログラム、デザイン、文章、画像、ロゴその他のコンテンツに関する権利は、運営者または正当な権利を有する第三者に帰属します。法令上認められる場合または権利者の許可がある場合を除き、無断で複製、転載、改変、再配布または商用利用することを禁止します。</p>
+
+                <h3>第12条（外部サービス）</h3>
+                <p>本サービスは、Google Apps Script、Googleスプレッドシート、Googleフォーム、GitHub Pagesその他の外部サービスを利用して提供される場合があります。外部サービスの障害、仕様変更、利用条件の変更または提供終了等により、本サービスの一部が利用できなくなることがあります。外部サービスの利用については、各提供事業者が定める規約等も適用されます。</p>
+
+                <h3>第13条（免責・責任の範囲）</h3>
+                <p>1. 運営者は、本サービスの完全性、正確性、継続性、特定目的への適合性、エラーが発生しないことおよびデータが常に保存されることを保証しません。</p>
+                <p>2. 通信障害、サーバー障害、外部サービスの停止、メンテナンス、端末・ブラウザの不具合、利用者の操作その他の事情により、データの遅延、欠落、消失または表示の不整合が生じる場合があります。</p>
+                <p>3. 運営者は、法令上免責が認められない場合を除き、本サービスの利用または利用不能によって生じた損害について責任を負いません。運営者に故意または重大な過失がある場合など、法令により責任が制限できない場合はこの限りではありません。</p>
+
+                <h3>第14条（規約の変更）</h3>
+                <p>運営者は、法令の改正、サービス内容の変更その他必要がある場合、本規約を変更することがあります。変更後の規約は、本サービス上に掲載した時点または掲載時に別途定めた時点から適用されます。重要な変更については、可能な範囲で本サービス上に案内します。</p>
+
+                <h3>第15条（準拠法・協議）</h3>
+                <p>本規約は日本法に準拠します。本サービスまたは本規約に関して疑問や問題が生じた場合、運営者と利用者は、関係法令に従い、誠実に解決を図るものとします。</p>
+
+                <h3>第16条（お問い合わせ）</h3>
+                <p>本サービスに関する問い合わせは、本サービスまたは運営者が別途案内する連絡先・窓口から行ってください。問い合わせの際には、パスワード、認証トークン、復旧用ファイル等の秘密情報を送信しないでください。</p>
+            `},
+            privacy:{title:'プライバシーポリシー',html:`
+                <p><strong>制定・改定日：2026年11月17日</strong></p>
+                <p>株シミュレーターLIFEオンライン（以下「本サービス」といいます。）では、利用者に関する情報を適切に取り扱うことが重要であると考えています。本ポリシーでは、本サービスが取り扱う情報、その利用目的、保存方法および利用者が確認できる事項について説明します。</p>
+
+                <h3>第1条（基本方針）</h3>
+                <p>運営者は、本サービスの提供・維持に必要な範囲で利用者に関する情報を取り扱い、関係法令および本ポリシーに従って適切な管理に努めます。本ポリシーは、本サービスの実際の機能および利用する外部サービスに応じて適用されます。</p>
+
+                <h3>第2条（取り扱う情報）</h3>
+                <p>本サービスでは、機能の提供・維持、利用者の識別、障害対応および不正利用防止のため、次の情報を取り扱う場合があります。</p>
+                <ul>
+                    <li><strong>利用者登録情報：</strong>利用者ID、表示名、認証・アカウント管理に必要な情報</li>
+                    <li><strong>シミュレーション情報：</strong>仮想資産、現金残高、保有銘柄、保有株数、取引履歴、取引結果、ランキングやスコアの算出に必要な情報</li>
+                    <li><strong>アクセス記録：</strong>アクセス日時、アクセスしたページのURL、ページタイトル</li>
+                    <li><strong>端末・環境情報：</strong>端末の種類、OS、ブラウザの種類など、アクセス時にブラウザから取得できる情報</li>
+                    <li><strong>問い合わせ情報：</strong>利用者が問い合わせ窓口を通じて任意に送信した内容や、対応に必要な情報</li>
+                </ul>
+                <p>本サービスは、利用者に対して、住所、電話番号、学校名、実名、メールアドレス等を表示名として登録することを求めるものではありません。利用者は、表示名や問い合わせ内容に不要な個人情報を含めないでください。</p>
+                <p>登録時には、利用者本人による「13歳以上であること」の確認、および18歳未満の場合の「法定代理人（親権者または未成年後見人）の同意を得ていること」の確認を求めます。このチェック欄は登録画面での確認に使用し、生年月日や本人確認書類の入力・送信は求めません。</p>
+
+                <h3>第3条（情報の取得方法）</h3>
+                <p>1. 利用者登録情報およびシミュレーション情報は、利用者による登録、注文、売買その他の操作に応じて取得・更新されます。</p>
+                <p>2. アクセス記録については、本サービスのページ表示時に、アクセス日時、ページURL、ページタイトル、端末種別、OSおよびブラウザ種別等を取得し、Googleフォーム等を通じて記録する仕組みを設けています。記録処理は通信環境や外部サービスの状態により失敗する場合があります。</p>
+                <p>3. ブラウザ内に保存される利用者情報は、利用者登録時等に本サービスの機能によって保存されます。</p>
+
+                <h3>第4条（情報の利用目的）</h3>
+                <p>取得した情報は、次の目的の範囲で利用します。</p>
+                <ul>
+                    <li>利用者の識別、登録状態の確認および認証</li>
+                    <li>仮想資産、保有銘柄、取引履歴等の保存・更新・表示</li>
+                    <li>ランキング、順位、利益率、スコア等の集計および表示</li>
+                    <li>取引回数制限その他の利用ルールの適用</li>
+                    <li>アクセス状況の把握、利用傾向の確認およびサービス改善</li>
+                    <li>不具合の調査、障害対応、保守およびセキュリティ対策</li>
+                    <li>不正利用、規約違反またはサービスへの妨害行為の確認・防止</li>
+                    <li>利用者からの問い合わせへの対応</li>
+                </ul>
+
+                <h3>第5条（保存先・利用する外部サービス）</h3>
+                <p>1. 本サービスのオンライン機能では、Google Apps ScriptおよびGoogleスプレッドシートを利用して、利用者登録情報、仮想資産、保有銘柄、取引履歴、ランキング等をサーバー側で保存・処理します。</p>
+                <p>2. アクセス情報の記録にはGoogleフォームを利用する仕組みを設けています。また、本サービスのページ公開にはGitHub Pages等の外部サービスを利用する場合があります。</p>
+                <p>3. これらの外部サービスに情報が送信・保存される場合、各サービス提供事業者の規約、プライバシーポリシーおよびシステム仕様に従って処理されます。外部サービス側での保存期間、管理方法、処理地域等は、各提供事業者の案内をご確認ください。</p>
+                <p>4. 外部サービスの仕様変更、障害または提供終了等により、情報の記録・表示・保存に影響が生じる場合があります。</p>
+
+                <h3>第6条（端末内の保存）</h3>
+                <p>1. 利用者IDや認証に必要な情報等の一部は、ブラウザのローカルストレージ等を利用して利用者の端末内に保存されます。これにより、次回アクセス時に利用者情報を引き継ぐ機能を提供します。</p>
+                <p>2. ブラウザの閲覧データ削除、サイトデータ削除、端末の初期化・故障・変更、ブラウザの設定変更等によって、端末内の情報が失われることがあります。</p>
+                <p>3. 利用者がダウンロードする復旧用JSONファイルには、利用者IDおよび認証に必要な情報が含まれる場合があります。第三者に渡したり、インターネット上に公開したりしないでください。</p>
+
+                <h3>第7条（ランキング等で他の利用者に表示される情報）</h3>
+                <p>ランキング機能を利用する場合、登録した表示名、総資産額、利益率、累計利益、スコア等、ランキング表示に必要な情報が他の利用者に表示されることがあります。ランキングに表示されることを望まない個人情報や、個人を特定できる名前を表示名に設定しないでください。</p>
+
+                <h3>第8条（第三者提供・委託）</h3>
+                <p>運営者は、法令に基づく場合等を除き、利用者の情報を本人の同意なく第三者に提供しないよう努めます。ただし、本サービスの提供に必要な外部サービス事業者のシステムを利用するため、情報を当該サービスへ送信し、保存・処理を委ねる場合があります。また、法令に基づく公的機関からの適法な要請等があった場合には、必要な範囲で情報を開示することがあります。</p>
+
+                <h3>第9条（保存期間・削除）</h3>
+                <p>情報は、利用目的の達成および本サービスの運営に必要な期間、保存する場合があります。保存期間は情報の種類、運営上の必要性、外部サービスの仕様等によって異なります。利用者から削除等の希望があった場合でも、技術上の制約、本人確認、法令上の必要性、障害調査や不正利用防止のため、直ちに削除できない場合があります。</p>
+
+                <h3>第10条（安全管理）</h3>
+                <p>運営者は、取り扱う情報について、不正アクセス、漏えい、紛失、破壊または改ざん等を防止するため、合理的な範囲で安全管理に努めます。ただし、インターネット通信、利用者の端末、外部サービスおよび情報システムに完全な安全性を保証するものではありません。</p>
+                <p>利用者も、利用者ID、認証情報および復旧用ファイルを適切に管理し、他人と共有しないようにしてください。</p>
+
+                <h3>第11条（利用者による確認・訂正・削除等）</h3>
+                <p>利用者本人が自身の情報の確認、訂正、削除等を希望する場合は、本サービスまたは運営者が別途案内する問い合わせ窓口からご連絡ください。本人確認をお願いする場合があります。対応の可否や方法は、対象情報の種類、保存先、外部サービスの仕様および法令上の要件等を踏まえて判断します。</p>
+
+                <h3>第12条（未成年の利用者へのお願い）</h3>
+                <p>未成年の利用者は、表示名や問い合わせ内容に実名、住所、電話番号、学校名、顔写真、SNSアカウント等の個人情報を含めないよう注意してください。復旧用ファイルや利用者ID等も、友人を含む第三者に共有しないでください。個人情報の扱いに不安がある場合は、保護者や学校関係者に相談してください。</p>
+
+                <h3>第13条（本ポリシーの変更）</h3>
+                <p>運営者は、法令、サービス内容、利用する外部サービスまたは情報の取り扱い方法の変更等に応じて、本ポリシーを改定することがあります。変更後の内容は本サービス上に掲載します。重要な変更については、可能な範囲で本サービス上に案内します。</p>
+
+                <h3>第14条（お問い合わせ）</h3>
+                <p>本ポリシーおよび情報の取り扱いに関するお問い合わせは、本サービスまたは運営者が別途案内する連絡先・窓口から行ってください。問い合わせの際、パスワード、認証トークン、復旧用ファイル等の秘密情報を送らないでください。</p>
+            `}
+        };
+        window.lifeOpenLegal=function(type){
+            const doc=lifeLegalDocuments[type];if(!doc)return;
+            document.getElementById('life-legal-title').textContent=doc.title;
+            document.getElementById('life-legal-body').innerHTML=doc.html;
+            const modal=document.getElementById('life-legal-modal');modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');
+            document.body.style.overflow='hidden';
+        };
+        window.lifeCloseLegal=function(){
+            const modal=document.getElementById('life-legal-modal');modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';
+        };
+        document.getElementById('life-legal-modal').addEventListener('click',function(e){if(e.target===this)lifeCloseLegal();});
+        document.addEventListener('keydown',function(e){if(e.key==='Escape')lifeCloseLegal();});
+    })();
+    </script>
+<!-- TEST ONLY: 本番ステータスAPI監視を無効化 -->
+
 </body>
 </html>
