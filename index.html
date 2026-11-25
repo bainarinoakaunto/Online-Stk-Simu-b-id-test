@@ -790,7 +790,7 @@
             { name: "ワールドトレードネット", code: "1150", sector: "卸売業", price: 2080, per: 10.7, div: 3.1, founded: 1992, benefit: "特産品ギフト", desc: "国内外の商品流通を手がける。" }
         ];
 
-        const STORAGE_KEY = 'tradePro_saveData_v6';
+        let STORAGE_KEY = 'tradePro_saveData_v6';
         let state = { cash: 1000000, portfolio: {}, history: [], stocks: [], usedCoupons: [] };
         let newsList = [];
         let selectedStockCode = null;
@@ -798,7 +798,42 @@
         let currentChartType = 'candlestick';
         let isMarketOpen = false;
 
+        // B! ID接続設定
+        // Apps Scriptの公開と b-id.js のURL設定が完了した後に true にします。
+        const BID_LOGIN_ENABLED = false;
+        const BID_CLIENT_URL = 'https://bainarinoakaunto.github.io/b-id/b-id.js';
+
         function initApp() {
+            if (!BID_LOGIN_ENABLED) {
+                startSimulator();
+                return;
+            }
+            const loader = document.createElement('script');
+            loader.src = BID_CLIENT_URL;
+            loader.onload = function () {
+                if (!window.BID || typeof window.BID.requireLogin !== 'function') {
+                    alert('B! IDを読み込めませんでした。設定を確認してください。');
+                    return;
+                }
+                window.BID.requireLogin().then(function (user) {
+                    // ブラウザ内の保存データをB! IDユーザーごとに分離
+                    const safeId = String(user.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                    if (!safeId) throw new Error('B! IDのユーザーIDを確認できません。');
+                    window.BID_USER = user;
+                    STORAGE_KEY = 'tradePro_saveData_v6_' + safeId;
+                    startSimulator();
+                }).catch(function (error) {
+                    console.error('B! ID login error:', error);
+                    alert('B! IDログインを完了できませんでした。');
+                });
+            };
+            loader.onerror = function () {
+                alert('B! IDの接続先を読み込めません。公開URLを確認してください。');
+            };
+            document.head.appendChild(loader);
+        }
+
+        function startSimulator() {
             loadSavedState();
             runEnvironmentCheck();
             setInterval(updateMarketTimeAndStatus, 1000);
