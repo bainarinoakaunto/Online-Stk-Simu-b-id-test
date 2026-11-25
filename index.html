@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>株シミュレーター LIFE｜B! ID テスト環境</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6fb;--card:#fff;--ink:#1d2b40;--muted:#65758b;--blue:#2368d8;--line:#dce4ef}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;line-height:1.75}
+header{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 max(20px,calc((100% - 920px)/2));font-weight:800}
+main{max-width:920px;margin:42px auto;padding:0 20px}.eyebrow{color:var(--blue);font-size:.78rem;font-weight:800;letter-spacing:.12em}
+h1{font-size:clamp(1.6rem,4vw,2.3rem);line-height:1.35;margin:8px 0 12px}.lead{color:var(--muted);max-width:680px}
+.card{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 8px 28px #1d2b400d}
+.status{display:flex;align-items:center;gap:10px;font-weight:800}.dot{width:10px;height:10px;border-radius:50%;background:#e2a32b}
+ul{padding-left:1.3rem;color:var(--muted)}li{margin:6px 0}
+.note{font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin-top:18px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:30px}
+</style>
+</head>
+<body>
+<header>BAINARI <span style="color:#9aa8ba;margin-left:8px;font-weight:500">/ TEST ENVIRONMENT</span></header>
+<main>
+<div class="eyebrow">B! ID CONNECTION TEST</div>
+<h1>株シミュレーター LIFE<br>テスト環境</h1>
+<p class="lead">このページは、本番サービスとは切り離したB! ID接続テスト用の準備ページです。</p>
+<section class="card">
+<div class="status"><span class="dot"></span> B! IDの接続準備中</div>
+<p>現在、ログイン基盤の公開先とApps Scriptの接続先がまだ設定されていません。</p>
+<ul>
+<li>本番の株価・取引・ランキングサーバーには接続しません。</li>
+<li>本番のGoogleフォームにもデータを送信しません。</li>
+<li>ログイン設定が完了するまで、メールアドレスや認証コードは入力しないでください。</li>
+</ul>
+<div class="note">このテストページは404を解消するための仮ページです。B! IDの認証動作と、株シミュレーター本体のテスト版は、接続先を安全に分離してから追加します。</div>
+</section>
+</main>
+<footer>株シミュレーター LIFE｜テスト専用</footer>
+</body>
+</html>
